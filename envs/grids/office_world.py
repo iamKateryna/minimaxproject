@@ -10,7 +10,8 @@ class OfficeWorld:
         self.map_height, self.map_width = 12,9
 
     def reset(self):
-        self.agent = (2,1)
+        self.agent = (10,1) # agent_1
+        # TO DO: add agent_2 and modify game's logic for 2 agents
 
     def execute_action(self, a):
         """
@@ -156,7 +157,7 @@ class OfficeWorld:
         for x in [1,4,7,10]:
             self.forbidden_transitions.remove((x,5,Actions.up))
             self.forbidden_transitions.remove((x,6,Actions.down))
-        for x in [1,10]:
+        for x in [1, 7, 10]:
             self.forbidden_transitions.remove((x,2,Actions.up))
             self.forbidden_transitions.remove((x,3,Actions.down))
         # Adding the agent
