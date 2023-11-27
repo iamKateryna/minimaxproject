@@ -10,8 +10,9 @@ class OfficeWorld:
         self.map_height, self.map_width = 12,9
 
     def reset(self):
+        # TO DO: place both agents on the map randomly (avoid decorations)
         self.agent = (10,1) # agent_1
-        # TO DO: add agent_2 and modify game's logic for 2 agents
+        # TO DO: add agent_2 with the same action space, modify game's logic for 2 agents
 
     def execute_action(self, a):
         """
@@ -107,25 +108,27 @@ class OfficeWorld:
     def _load_map(self):
         # Creating the map
         self.objects = {}
-        # self.objects[(1,1)] = "a"
-        # self.objects[(1,7)] = "b"
-        # self.objects[(10,7)] = "c"
-        # self.objects[(10,1)] = "d"
-        # self.objects[(7,4)] = "e"  # MAIL
-        # self.objects[(8,2)] = "f"  # COFFEE
-        # self.objects[(3,6)] = "f"  # COFFEE
-        # self.objects[(4,4)] = "g"  # OFFICE
-        # self.objects[(4,1)] = "n"  # PLANT
-        # self.objects[(7,1)] = "n"  # PLANT
-        # self.objects[(4,7)] = "n"  # PLANT
-        # self.objects[(7,7)] = "n"  # PLANT
-        # self.objects[(1,4)] = "n"  # PLANT
-        # self.objects[(10,4)] = "n" # PLANT
-        self.objects[(0,8)] = "w" # Whipped cream
-        self.objects[(5,3)] = "c"  # Coffee
-        self.objects[(0,5)] = "c"  # Coffee
-        self.objects[(7,7)] = "d"  # Office
-        self.objects[(11,4)] = "m" # Milk
+        self.objects[(1,1)] = "a"
+        self.objects[(1,7)] = "b"
+        self.objects[(10,7)] = "c"
+        self.objects[(10,1)] = "d"
+        self.objects[(7,4)] = "e"  # MAIL
+        self.objects[(8,2)] = "f"  # COFFEE
+        self.objects[(3,6)] = "f"  # COFFEE
+        self.objects[(4,4)] = "g"  # OFFICE
+        self.objects[(4,1)] = "n"  # PLANT
+        self.objects[(7,1)] = "n"  # PLANT
+        self.objects[(4,7)] = "n"  # PLANT
+        self.objects[(7,7)] = "n"  # PLANT
+        self.objects[(1,4)] = "n"  # PLANT
+        self.objects[(10,4)] = "n" # PLANT
+        
+        # Latte version of the env modifications
+        # self.objects[(0,8)] = "w" # Whipped cream
+        # self.objects[(5,3)] = "c"  # Coffee
+        # self.objects[(0,5)] = "c"  # Coffee
+        # self.objects[(7,7)] = "d"  # Office
+        # self.objects[(11,4)] = "m" # Milk
         # Adding walls
         self.forbidden_transitions = set()
         # general grid
@@ -142,22 +145,24 @@ class OfficeWorld:
             for x in [2,5,8]:
                 self.forbidden_transitions.remove((x,y,Actions.right))
                 self.forbidden_transitions.remove((x+1,y,Actions.left))
-        for y in [0,3]:
-            for x in [2]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
-        for y in [4, 8]:
-            for x in [8]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
-        for y in [2]:
-            for x in [5]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
+
+        # Latte version of the env modifications
+        # for y in [0,3]:
+        #     for x in [2]:
+        #         self.forbidden_transitions.remove((x,y,Actions.right))
+        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
+        # for y in [4, 8]:
+        #     for x in [8]:
+        #         self.forbidden_transitions.remove((x,y,Actions.right))
+        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
+        # for y in [2]:
+        #     for x in [5]:
+        #         self.forbidden_transitions.remove((x,y,Actions.right))
+        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
         for x in [1,4,7,10]:
             self.forbidden_transitions.remove((x,5,Actions.up))
             self.forbidden_transitions.remove((x,6,Actions.down))
-        for x in [1, 7, 10]:
+        for x in [1, 10]:
             self.forbidden_transitions.remove((x,2,Actions.up))
             self.forbidden_transitions.remove((x,3,Actions.down))
         # Adding the agent
