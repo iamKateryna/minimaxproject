@@ -26,10 +26,9 @@ class OfficeWorld:
     def __init__(self, map_number = 1):
         self._load_map(map_number)
         self.map_height, self.map_width = 12,9
-
-    def reset(self):
-        self.agent_1.reset()
-        self.agent_2.reset()
+    
+    def _get_action_space(self) -> list[Actions]:
+        return [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
     
     def _get_agent_by_number(self, agent_number: int) -> Agent:
         if agent_number == 1:
@@ -38,15 +37,7 @@ class OfficeWorld:
             return self.agent_2
         else:
             raise NotImplementedError
-
-    def execute_action(self, agent_number, a):
-        """
-        We execute 'action' in the game
-        """
-        agent = self._get_agent_by_number(agent_number)
-        x,y = agent.get_coordinates()
-        agent = self._get_new_position(x, y, a)
-
+    
     def _get_new_position(self, x, y, a):
         action = Actions(a)
         # executing action
@@ -57,6 +48,84 @@ class OfficeWorld:
             elif action == Actions.right: x+=1
 
         return x, y
+
+    def _get_obstacle_coordinates(self) -> list[tuple[int, int]]:
+        obstacle_coordinates = []
+
+        for coordinates, object in self.objects:
+            if object in self.OBSTACLE_OBJECT_TYPES:
+                obstacle_coordinates.append(coordinates)
+        
+        return obstacle_coordinates
+    
+    def _load_agents(self) -> None:
+        def generate_coordinates(exception_coordinates):
+            x, y = None, None
+            
+            while not x or y or (x, y) in exception_coordinates:
+                x = random.randint(1, self.map_height)
+                y = random.randint(1, self.map_width)
+            
+            return x, y
+                    
+        obstacle_coordinates = self._get_obstacle_coordinates()
+        agent1_x, agent1_y = generate_coordinates(obstacle_coordinates)
+        agent2_x, agent2_y = generate_coordinates(obstacle_coordinates)
+        action_space = self._get_action_space()
+
+        self.agent_1 = Agent(agent1_x, agent1_y, action_space)
+        self.agent_2 = Agent(agent2_x, agent2_y, action_space)
+    
+    def _load_forbidden_transaction(self) -> None:
+        self.forbidden_transitions = set()
+        # general grid
+        for x in range(12):
+            for y in [0,3,6]:
+                self.forbidden_transitions.add((x,y,Actions.down)) 
+                self.forbidden_transitions.add((x,y+2,Actions.up))
+        for y in range(9):
+            for x in [0,3,6,9]:
+                self.forbidden_transitions.add((x,y,Actions.left))
+                self.forbidden_transitions.add((x+2,y,Actions.right))
+        # adding 'doors'
+        for y in [1,7]:
+            for x in [2,5,8]:
+                self.forbidden_transitions.remove((x,y,Actions.right))
+                self.forbidden_transitions.remove((x+1,y,Actions.left))
+            
+        for x in [1,4,7,10]:
+            self.forbidden_transitions.remove((x,5,Actions.up))
+            self.forbidden_transitions.remove((x,6,Actions.down))
+        for x in [1, 10]:
+            self.forbidden_transitions.remove((x,2,Actions.up))
+            self.forbidden_transitions.remove((x,3,Actions.down))
+        
+    def _load_map_objects(self, map_number) -> None:
+        if map_number == 1:
+            self.objects = self.MAP_1_OBJECTS
+        else:
+            raise NotImplementedError
+
+    def _load_map(self, map_number) -> None:
+        self._load_map_objects(map_number)
+        self._load_forbidden_transaction()
+        self._load_agents()
+
+    def execute_action(self, agent_number, a):
+        """
+        We execute 'action' in the game
+        """
+        agent = self._get_agent_by_number(agent_number)
+        x,y = agent.get_coordinates()
+        agent = self._get_new_position(x, y, a)
+    
+    def get_features(self, agent_number: int):
+        """
+        Returns the features of the current state (i.e., the location of the agent)
+        """
+        agent = self._get_agent_by_number(agent_number)
+        coordinates = agent.get_coordinates()
+        return np.array(coordinates)
 
     def get_true_propositions(self, agent_number: int):
         """
@@ -70,14 +139,22 @@ class OfficeWorld:
             ret += self.objects[agent_coordinates]
 
         return ret
-
-    def get_features(self, agent_number: int):
+    
+        def get_model(self):
         """
-        Returns the features of the current state (i.e., the location of the agent)
+        This method returns a model of the environment. 
+        We use the model to compute optimal policies using value iteration.
+        The optimal policies are used to set the average reward per step of each task to 1.
         """
-        agent = self._get_agent_by_number(agent_number)
-        coordinates = agent.get_coordinates()
-        return np.array(coordinates)
+        S = [(x,y) for x in range(12) for y in range(9)] # States
+        A = self.actions.copy() # Actions
+        L = self.objects.copy() # Labeling function
+        T = {}                  # Transitions (s,a) -> s' (they are deterministic)
+        for s in S:
+            x,y = s
+            for a in A:
+                T[(s,a)] = self._get_new_position(x,y,a)
+        return S,A,L,T # SALT xD
 
     def show(self):
         for y in range(8,-1,-1):
@@ -120,83 +197,6 @@ class OfficeWorld:
                         print(" ",end="")
                 print()                
 
-    def get_model(self):
-        """
-        This method returns a model of the environment. 
-        We use the model to compute optimal policies using value iteration.
-        The optimal policies are used to set the average reward per step of each task to 1.
-        """
-        S = [(x,y) for x in range(12) for y in range(9)] # States
-        A = self.actions.copy() # Actions
-        L = self.objects.copy() # Labeling function
-        T = {}                  # Transitions (s,a) -> s' (they are deterministic)
-        for s in S:
-            x,y = s
-            for a in A:
-                T[(s,a)] = self._get_new_position(x,y,a)
-        return S,A,L,T # SALT xD
-
-    def _load_map_objects(self, map_number) -> None:
-        if map_number == 1:
-            self.objects = self.MAP_1_OBJECTS
-        else:
-            raise NotImplementedError
-    
-    def _load_forbidden_transaction(self) -> None:
-        self.forbidden_transitions = set()
-        # general grid
-        for x in range(12):
-            for y in [0,3,6]:
-                self.forbidden_transitions.add((x,y,Actions.down)) 
-                self.forbidden_transitions.add((x,y+2,Actions.up))
-        for y in range(9):
-            for x in [0,3,6,9]:
-                self.forbidden_transitions.add((x,y,Actions.left))
-                self.forbidden_transitions.add((x+2,y,Actions.right))
-        # adding 'doors'
-        for y in [1,7]:
-            for x in [2,5,8]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
-            
-        for x in [1,4,7,10]:
-            self.forbidden_transitions.remove((x,5,Actions.up))
-            self.forbidden_transitions.remove((x,6,Actions.down))
-        for x in [1, 10]:
-            self.forbidden_transitions.remove((x,2,Actions.up))
-            self.forbidden_transitions.remove((x,3,Actions.down))
-    
-    def _get_action_space(self) -> list[Actions]:
-        return [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
-
-    def _load_map(self, map_number) -> None:
-        self._load_map_objects(map_number)
-        self._load_forbidden_transaction()
-        self._load_agents()
-
-    def _get_obstacle_coordinates(self) -> list[tuple[int, int]]:
-        obstacle_coordinates = []
-
-        for coordinates, object in self.objects:
-            if object in self.OBSTACLE_OBJECT_TYPES:
-                obstacle_coordinates.append(coordinates)
-        
-        return obstacle_coordinates
-    
-    def _load_agents(self) -> None:
-        def generate_coordinates(exception_coordinates):
-            x, y = None, None
-            
-            while not x or y or (x, y) in exception_coordinates:
-                x = random.randint(1, self.map_height)
-                y = random.randint(1, self.map_width)
-            
-            return x, y
-                    
-        obstacle_coordinates = self._get_obstacle_coordinates()
-        agent1_x, agent1_y = generate_coordinates(obstacle_coordinates)
-        agent2_x, agent2_y = generate_coordinates(obstacle_coordinates)
-        action_space = self._get_action_space()
-
-        self.agent_1 = Agent(agent1_x, agent1_y, action_space)
-        self.agent_2 = Agent(agent2_x, agent2_y, action_space)
+    def reset(self):
+        self.agent_1.reset()
+        self.agent_2.reset()
