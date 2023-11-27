@@ -28,43 +28,56 @@ class OfficeWorld:
         self.map_height, self.map_width = 12,9
 
     def reset(self):
-        # TO DO: place both agents on the map randomly (avoid decorations)
-        self.agent = (10,1) # agent_1
-        # TO DO: add agent_2 with the same action space, modify game's logic for 2 agents
+        self.agent_1.reset()
+        self.agent_2.reset()
+    
+    def _get_agent_by_number(self, agent_number: int) -> Agent:
+        if agent_number == 1:
+            return self.agent_1
+        elif agent_number == 2:
+            return self.agent_2
+        else:
+            raise NotImplementedError
 
-    def execute_action(self, a):
+    def execute_action(self, agent_number, a):
         """
         We execute 'action' in the game
         """
-        x,y = self.agent
-        self.agent = self._get_new_position(x,y,a)
+        agent = self._get_agent_by_number(agent_number)
+        x,y = agent.get_coordinates()
+        agent = self._get_new_position(x, y, a)
 
     def _get_new_position(self, x, y, a):
         action = Actions(a)
         # executing action
-        if (x,y,action) not in self.forbidden_transitions:
+        if (x, y, action) not in self.forbidden_transitions:
             if action == Actions.up: y+=1
-            if action == Actions.down: y-=1
-            if action == Actions.left: x-=1
-            if action == Actions.right: x+=1
-        return x,y
+            elif action == Actions.down: y-=1
+            elif action == Actions.left: x-=1
+            elif action == Actions.right: x+=1
 
+        return x, y
 
-    def get_true_propositions(self):
+    def get_true_propositions(self, agent_number: int):
         """
         Returns the string with the propositions that are True in this state
         """
         ret = ""
-        if self.agent in self.objects:
-            ret += self.objects[self.agent]
+        agent = self._get_agent_by_number(agent_number)
+
+        if agent in self.objects:
+            agent_coordinates = agent.get_coordinates()
+            ret += self.objects[agent_coordinates]
+
         return ret
 
-    def get_features(self):
+    def get_features(self, agent_number: int):
         """
         Returns the features of the current state (i.e., the location of the agent)
         """
-        x,y = self.agent
-        return np.array([x,y])
+        agent = self._get_agent_by_number(agent_number)
+        coordinates = agent.get_coordinates()
+        return np.array(coordinates)
 
     def show(self):
         for y in range(8,-1,-1):
@@ -186,4 +199,4 @@ class OfficeWorld:
         action_space = self._get_action_space()
 
         self.agent_1 = Agent(agent1_x, agent1_y, action_space)
-        self.agent_2 = Agent(agent1_x, agent1_y, action_space)
+        self.agent_2 = Agent(agent2_x, agent2_y, action_space)
