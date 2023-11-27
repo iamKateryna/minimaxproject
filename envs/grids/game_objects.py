@@ -1,5 +1,4 @@
-from enum import Enum
-import random
+from enum import Enum, StrEnum
 
 """
 The following classes are the types of objects that we are currently supporting 
@@ -16,7 +15,7 @@ class Entity:
         
     def idem_position(self,i,j):
         return self.i==i and self.j==j
-
+    
     def interact(self, agent):
         return True
 
@@ -64,3 +63,13 @@ class Actions(Enum):
     left  = 3 # move left
     none  = 4 # none or pick
     drop  = 5
+
+class OfficeWorldObjects(StrEnum):
+    A = "a"
+    B = "b"
+    C = "c"
+    D = "d"
+    MAIL = "e"
+    COFFEE = "f"
+    OFFICE = "g"
+    PLANT = "n"
