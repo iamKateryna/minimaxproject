@@ -1,12 +1,30 @@
 from envs.grids.game_objects import Actions
 import random, math, os
 import numpy as np
-
+from game_objects import Agent, OfficeWorldObjects
+from enum import StrEnum
 
 class OfficeWorld:
+    OBSTACLE_OBJECT_TYPES = [OfficeWorldObjects.PLANT]
 
-    def __init__(self):
-        self._load_map()
+    MAP_1_OBJECTS = {(1,1): OfficeWorldObjects.A,
+                    (1,7): OfficeWorldObjects.B,
+                    (10,7): OfficeWorldObjects.C,
+                    (10,1): OfficeWorldObjects.D,
+                    (7,4): OfficeWorldObjects.MAIL,
+                    (8,2): OfficeWorldObjects.COFFEE,
+                    (3,6): OfficeWorldObjects.COFFEE,
+                    (4,4): OfficeWorldObjects.OFFICE,
+                    (4,1): OfficeWorldObjects.PLANT,
+                    (7,1): OfficeWorldObjects.PLANT,
+                    (4,7): OfficeWorldObjects.PLANT,
+                    (7,7): OfficeWorldObjects.PLANT,
+                    (1,4): OfficeWorldObjects.PLANT,
+                    (10,4): OfficeWorldObjects.PLANT
+    }
+    
+    def __init__(self, map_number = 1):
+        self._load_map(map_number)
         self.map_height, self.map_width = 12,9
 
     def reset(self):
@@ -25,9 +43,9 @@ class OfficeWorld:
         action = Actions(a)
         # executing action
         if (x,y,action) not in self.forbidden_transitions:
-            if action == Actions.up   : y+=1
-            if action == Actions.down : y-=1
-            if action == Actions.left : x-=1
+            if action == Actions.up: y+=1
+            if action == Actions.down: y-=1
+            if action == Actions.left: x-=1
             if action == Actions.right: x+=1
         return x,y
 
@@ -105,31 +123,13 @@ class OfficeWorld:
                 T[(s,a)] = self._get_new_position(x,y,a)
         return S,A,L,T # SALT xD
 
-    def _load_map(self):
-        # Creating the map
-        self.objects = {}
-        self.objects[(1,1)] = "a"
-        self.objects[(1,7)] = "b"
-        self.objects[(10,7)] = "c"
-        self.objects[(10,1)] = "d"
-        self.objects[(7,4)] = "e"  # MAIL
-        self.objects[(8,2)] = "f"  # COFFEE
-        self.objects[(3,6)] = "f"  # COFFEE
-        self.objects[(4,4)] = "g"  # OFFICE
-        self.objects[(4,1)] = "n"  # PLANT
-        self.objects[(7,1)] = "n"  # PLANT
-        self.objects[(4,7)] = "n"  # PLANT
-        self.objects[(7,7)] = "n"  # PLANT
-        self.objects[(1,4)] = "n"  # PLANT
-        self.objects[(10,4)] = "n" # PLANT
-        
-        # Latte version of the env modifications
-        # self.objects[(0,8)] = "w" # Whipped cream
-        # self.objects[(5,3)] = "c"  # Coffee
-        # self.objects[(0,5)] = "c"  # Coffee
-        # self.objects[(7,7)] = "d"  # Office
-        # self.objects[(11,4)] = "m" # Milk
-        # Adding walls
+    def _load_map_objects(self, map_number) -> None:
+        if map_number == 1:
+            self.objects = self.MAP_1_OBJECTS
+        else:
+            raise NotImplementedError
+    
+    def _load_forbidden_transaction(self) -> None:
         self.forbidden_transitions = set()
         # general grid
         for x in range(12):
@@ -145,25 +145,45 @@ class OfficeWorld:
             for x in [2,5,8]:
                 self.forbidden_transitions.remove((x,y,Actions.right))
                 self.forbidden_transitions.remove((x+1,y,Actions.left))
-
-        # Latte version of the env modifications
-        # for y in [0,3]:
-        #     for x in [2]:
-        #         self.forbidden_transitions.remove((x,y,Actions.right))
-        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
-        # for y in [4, 8]:
-        #     for x in [8]:
-        #         self.forbidden_transitions.remove((x,y,Actions.right))
-        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
-        # for y in [2]:
-        #     for x in [5]:
-        #         self.forbidden_transitions.remove((x,y,Actions.right))
-        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
+            
         for x in [1,4,7,10]:
             self.forbidden_transitions.remove((x,5,Actions.up))
             self.forbidden_transitions.remove((x,6,Actions.down))
         for x in [1, 10]:
             self.forbidden_transitions.remove((x,2,Actions.up))
             self.forbidden_transitions.remove((x,3,Actions.down))
-        # Adding the agent
-        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
+    
+    def _get_action_space(self) -> list[Actions]:
+        return [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
+
+    def _load_map(self, map_number) -> None:
+        self._load_map_objects(map_number)
+        self._load_forbidden_transaction()
+        self._load_agents()
+
+    def _get_obstacle_coordinates(self) -> list[tuple[int, int]]:
+        obstacle_coordinates = []
+
+        for coordinates, object in self.objects:
+            if object in self.OBSTACLE_OBJECT_TYPES:
+                obstacle_coordinates.append(coordinates)
+        
+        return obstacle_coordinates
+    
+    def _load_agents(self) -> None:
+        def generate_coordinates(exception_coordinates):
+            x, y = None, None
+            
+            while not x or y or (x, y) in exception_coordinates:
+                x = random.randint(1, self.map_height)
+                y = random.randint(1, self.map_width)
+            
+            return x, y
+                    
+        obstacle_coordinates = self._get_obstacle_coordinates()
+        agent1_x, agent1_y = generate_coordinates(obstacle_coordinates)
+        agent2_x, agent2_y = generate_coordinates(obstacle_coordinates)
+        action_space = self._get_action_space()
+
+        self.agent_1 = Agent(agent1_x, agent1_y, action_space)
+        self.agent_2 = Agent(agent1_x, agent1_y, action_space)
