@@ -1,4 +1,3 @@
-
 def value_iteration(S,A,L,T,rm,gamma):
     """
     Standard value iteration to compute optimal policies for the grid environments.
