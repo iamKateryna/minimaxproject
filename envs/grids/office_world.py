@@ -116,7 +116,7 @@ class OfficeWorld:
         We execute 'action' in the game
         """
         agent = self._get_agent_by_number(agent_number)
-        x,y = agent.get_coordinates()
+        x, y = agent.coordinates
         agent = self._get_new_position(x, y, a)
     
     def get_features(self, agent_number: int):
@@ -124,8 +124,8 @@ class OfficeWorld:
         Returns the features of the current state (i.e., the location of the agent)
         """
         agent = self._get_agent_by_number(agent_number)
-        coordinates = agent.get_coordinates()
-        return np.array(coordinates)
+
+        return np.array(agent.coordinates)
 
     def get_true_propositions(self, agent_number: int):
         """
@@ -135,8 +135,7 @@ class OfficeWorld:
         agent = self._get_agent_by_number(agent_number)
 
         if agent in self.objects:
-            agent_coordinates = agent.get_coordinates()
-            ret += self.objects[agent_coordinates]
+            ret += self.objects[agent.coordinates]
 
         return ret
     
@@ -174,8 +173,12 @@ class OfficeWorld:
                     print("|",end="")
                 elif x % 3 == 0:
                     print(" ",end="")
-                if (x,y) == self.agent:
-                    print("A",end="")
+                if (x,y) == self.agent1.coordinates and (x,y) == self.agent2.coordinates:
+                    print("A1A2",end="")
+                elif (x,y) == self.agent1.coordinates:
+                    print("A1",end="")
+                elif (x,y) == self.agent2.coordinates:
+                    print("A2",end="")
                 elif (x,y) in self.objects:
                     print(self.objects[(x,y)],end="")
                 else:
