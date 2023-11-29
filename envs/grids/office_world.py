@@ -1,9 +1,8 @@
 from types import NoneType
 from typing import Type
-from envs.grids.game_objects import Actions
 import random
 import numpy as np
-from game_objects import *
+from .game_objects import *
 from collections import defaultdict
 import gymnasium.spaces
 

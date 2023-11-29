@@ -2,8 +2,8 @@ from enum import Enum, StrEnum
 from typing import Union
 import gymnasium.spaces
 from abc import abstractmethod
-from constants import *
 import numpy as np
+from .constants import *
 
 """
 The following classes are the types of objects that we are currently supporting

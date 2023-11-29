@@ -1,11 +1,8 @@
 from re import L
-import numpy as np
-import gymnasium.spaces
-from game_objects import *
 from copy import copy
 import functools
-
-from envs.grids.office_world import OfficeWorld
+from .game_objects import *
+from .office_world import OfficeWorld
 from pettingzoo import ParallelEnv
 
 
@@ -69,10 +66,20 @@ class OfficeWorldEnv(ParallelEnv):
 
         self.timestep += 1
 
+        terminations = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
+        rewards = {agent_id: 0 for agent_id, _ in self.id_to_agent.items()}
+
+        truncations = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
+
+        if self.timestep > 100:
+            rewards = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
+            truncations = {agent_id: True for agent_id, _ in self.id_to_agent.items()}
+            self.agents = []
+
         observations = self._get_observations()
         infos = {agent_id: {} for agent_id, _ in self.id_to_agent.items()}
 
-        return observations, infos
+        return observations, rewards, terminations, truncations, infos
 
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
