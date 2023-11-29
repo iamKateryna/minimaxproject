@@ -22,6 +22,14 @@ class OfficeWorldEnv(ParallelEnv):
         }
         self.timestep = 0
 
+    @property
+    def primary_agent(self):
+        return self.id_to_agent[self.PRIMARY_AGENT_ID]
+
+    @property
+    def second_agent(self):
+        return self.id_to_agent[self.SECOND_AGENT_ID]
+
     def _generate_agent(self, agent_class: type[Agent]) -> Agent:
         x, y = self.office_world.generate_coordinates()
 
@@ -46,6 +54,14 @@ class OfficeWorldEnv(ParallelEnv):
             }
 
         return observations
+
+    @functools.lru_cache(maxsize=None)
+    def action_space(self, agent):
+        return self.id_to_agent[agent].action_space
+
+    @functools.lru_cache(maxsize=None)
+    def observation_space(self, agent):
+        return self.office_world.observation_space
 
     def reset(self, seed=None, options=None):
         self.agents = copy(self.possible_agents)
@@ -80,22 +96,6 @@ class OfficeWorldEnv(ParallelEnv):
         infos = {agent_id: {} for agent_id, _ in self.id_to_agent.items()}
 
         return observations, rewards, terminations, truncations, infos
-
-    @functools.lru_cache(maxsize=None)
-    def observation_space(self, agent):
-        return self.office_world.observation_space
-
-    @functools.lru_cache(maxsize=None)
-    def action_space(self, agent):
-        return self.id_to_agent[agent].action_space
-
-    @property
-    def primary_agent(self):
-        return self.id_to_agent[self.PRIMARY_AGENT_ID]
-
-    @property
-    def second_agent(self):
-        return self.id_to_agent[self.SECOND_AGENT_ID]
 
     def show(self):
         for y in range(8, -1, -1):

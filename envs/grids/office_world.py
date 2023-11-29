@@ -43,16 +43,6 @@ class OfficeWorld:
 
         return obstacle_coordinates
 
-    def generate_coordinates(self) -> tuple[int, int]:
-        obstacle_coordinates = self._get_obstacle_coordinates()
-        x, y = None, None
-
-        while not x or not y or (x, y) in obstacle_coordinates:
-            x = random.randint(1, self._map_height)
-            y = random.randint(1, self._map_width)
-
-        return x, y
-
     def _load_forbidden_transitions(self) -> set[tuple[int, int, Actions]]:
         if not self._forbidden_actions:
             raise TypeError
@@ -90,12 +80,7 @@ class OfficeWorld:
 
         return location_to_forbidden_actions
 
-    def get_forbidden_actions(self, coordinates) -> set[Actions]:
-        return self._forbidden_actions[coordinates]
-
-    def _load_map_objects(
-        self, map_number
-    ) -> dict[tuple[int, int], str]:
+    def _load_map_objects(self, map_number) -> dict[tuple[int, int], str]:
         if map_number == 1:
             objects = self.MAP_1_OBJECTS
         else:
@@ -127,6 +112,19 @@ class OfficeWorld:
     @property
     def objects(self) -> dict[tuple[int, int], str]:
         return self._objects
+
+    def generate_coordinates(self) -> tuple[int, int]:
+        obstacle_coordinates = self._get_obstacle_coordinates()
+        x, y = None, None
+
+        while not x or not y or (x, y) in obstacle_coordinates:
+            x = random.randint(1, self._map_height)
+            y = random.randint(1, self._map_width)
+
+        return x, y
+
+    def get_forbidden_actions(self, coordinates) -> set[Actions]:
+        return self._forbidden_actions[coordinates]
 
     def get_true_propositions(self, agent_coordinates: tuple[int, int]):
         """
