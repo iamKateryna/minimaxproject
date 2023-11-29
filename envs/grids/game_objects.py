@@ -1,7 +1,9 @@
 from enum import Enum, StrEnum
+from typing import Union
 import gymnasium.spaces
 from abc import abstractmethod
 from constants import *
+import numpy as np
 
 """
 The following classes are the types of objects that we are currently supporting
@@ -17,7 +19,7 @@ class Entity:
         self.x = x
         self.y = y
 
-    def idem_position(self, x: int, y: int) -> None:
+    def idem_position(self, x: int, y: int) -> bool:
         return self.x == x and self.y == y
 
     @property
@@ -28,19 +30,22 @@ class Entity:
     def coordinates(self) -> tuple[int, int]:
         return (self.x, self.y)
 
+    @property
+    def numpy_coordinates(self) -> np.ndarray:
+        return np.array([self.x, self.y])
+
 
 class Agent(Entity):
-    def __init__(self, x: int, y: int, action_space_number: int):
+    def __init__(self, x: int, y: int, action_space_number: int = 4):
         super().__init__(x, y)
-        self.agent_name = agent_name
         self._action_space = gymnasium.spaces.Discrete(action_space_number, 0)
         self._initial_position = (x, y)
 
-    def reset(self):
+    def reset(self) -> None:
         self.change_position(*self._initial_position)
-    
+
     @abstractmethod
-    def do_action(self, action: str):
+    def act(self, action_id: int):
         pass
 
     @property
@@ -50,35 +55,46 @@ class Agent(Entity):
     def __str__(self):
         return "A"
 
+
 class PrimaryAgent(Agent):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, action_space, PRIMARY_AGENT_ACTION_SPACE_NUMBER)
-    
-    def do_action(self, action_id: int):
-        action = Actions(a)
+        super().__init__(x, y, PRIMARY_AGENT_ACTION_SPACE_NUMBER)
+
+    def act(self, action_id: int):
+        action = Actions(action_id)
         x, y = self.coordinates
-        
-        if action == Actions.up: y+=1
-        elif action == Actions.down: y-=1
-        elif action == Actions.left: x-=1
-        elif action == Actions.right: x+=1
+
+        if action == Actions.up:
+            y += 1
+        elif action == Actions.down:
+            y -= 1
+        elif action == Actions.left:
+            x -= 1
+        elif action == Actions.right:
+            x += 1
 
         self.change_position(x, y)
+
 
 class SecondAgent(Agent):
     def __init__(self, x: int, y: int):
-        super().__init__(x, y, action_space, SECOND_AGENT_ACTION_SPACE_NUMBER)
-    
-    def do_action(self, action_id: int):
-        action = Actions(a)
+        super().__init__(x, y, SECOND_AGENT_ACTION_SPACE_NUMBER)
+
+    def act(self, action_id: int):
+        action = Actions(action_id)
         x, y = self.coordinates
-        
-        if action == Actions.up: y+=1
-        elif action == Actions.down: y-=1
-        elif action == Actions.left: x-=1
-        elif action == Actions.right: x+=1
+
+        if action == Actions.up:
+            y += 1
+        elif action == Actions.down:
+            y -= 1
+        elif action == Actions.left:
+            x -= 1
+        elif action == Actions.right:
+            x += 1
 
         self.change_position(x, y)
+
 
 class Obstacle(Entity):
     def __init__(self, x, y):
