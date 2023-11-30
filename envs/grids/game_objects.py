@@ -1,4 +1,5 @@
-from enum import Enum, StrEnum
+from enum import IntEnum, StrEnum
+from tkinter import RIGHT
 from typing import Union
 import gymnasium.spaces
 from abc import abstractmethod
@@ -122,13 +123,13 @@ Enum with the actions that the agent can execute
 """
 
 
-class Actions(Enum):
-    up = 0  # move up
-    right = 1  # move right
-    down = 2  # move down
-    left = 3  # move left
-    none = 4  # none or pick
-    drop = 5
+class Actions(IntEnum):
+    UP = 0  # move up
+    RIGHT = 1  # move right
+    DOWN = 2  # move down
+    LEFT = 3  # move left
+    NONE = 4  # none or pick
+    DROP = 5
 
 
 class OfficeWorldObjects(StrEnum):
