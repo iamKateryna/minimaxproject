@@ -8,9 +8,12 @@ import gymnasium.spaces
 
 
 class OfficeWorld:
-    OBSTACLE_OBJECT_TYPES = [OfficeWorldObjects.PLANT]
+    OBSTACLE_OBJECT_TYPES = [OfficeWorldObjects.PLANT, 
+                             OfficeWorldObjects.MAIL,
+                             OfficeWorldObjects.COFFEE,
+                             OfficeWorldObjects.OFFICE]
 
-    MAP_1_OBJECTS: dict[tuple[int, int], str] = {
+    MAP_1_OBJECTS: dict[tuple[int, int], OfficeWorldObjects] = {
         (1, 1): OfficeWorldObjects.A,
         (1, 7): OfficeWorldObjects.B,
         (10, 7): OfficeWorldObjects.C,
@@ -26,6 +29,20 @@ class OfficeWorld:
         (1, 4): OfficeWorldObjects.PLANT,
         (10, 4): OfficeWorldObjects.PLANT,
     }
+    
+    MAP_2_OBJECTS: dict[tuple[int, int], str] = {
+        (7, 4): OfficeWorldObjects.MAIL,
+        (8, 2): OfficeWorldObjects.COFFEE,
+        (3, 6): OfficeWorldObjects.COFFEE,
+        (4, 4): OfficeWorldObjects.OFFICE,
+        (4, 1): OfficeWorldObjects.PLANT,
+        (7, 1): OfficeWorldObjects.PLANT,
+        (4, 7): OfficeWorldObjects.PLANT,
+        (7, 7): OfficeWorldObjects.PLANT,
+        (1, 4): OfficeWorldObjects.PLANT,
+        (10, 4): OfficeWorldObjects.PLANT,
+    }
+    
 
     def __init__(self, map_height: int = 12, map_width: int = 9, map_number: int = 1):
         self._objects = self._load_map_objects(map_number)
@@ -37,8 +54,8 @@ class OfficeWorld:
     def _get_obstacle_coordinates(self) -> list[tuple[int, int]]:
         obstacle_coordinates = []
 
-        for coordinates, object in self._objects:
-            if object in self.OBSTACLE_OBJECT_TYPES:
+        for coordinates, object_ in self._objects.items():
+            if object_ in self.OBSTACLE_OBJECT_TYPES:
                 obstacle_coordinates.append(coordinates)
 
         return obstacle_coordinates
@@ -80,9 +97,11 @@ class OfficeWorld:
 
         return location_to_forbidden_actions
 
-    def _load_map_objects(self, map_number) -> dict[tuple[int, int], str]:
+    def _load_map_objects(self, map_number) -> dict[tuple[int, int], OfficeWorldObjects]:
         if map_number == 1:
             objects = self.MAP_1_OBJECTS
+        elif map_number == 2:
+            objects = self.MAP_2_OBJECTS
         else:
             raise NotImplementedError
 
@@ -110,7 +129,7 @@ class OfficeWorld:
         return (self._map_height, self._map_width)
 
     @property
-    def objects(self) -> dict[tuple[int, int], str]:
+    def objects(self) -> dict[tuple[int, int], OfficeWorldObjects]:
         return self._objects
 
     def generate_coordinates(self) -> tuple[int, int]:
@@ -118,8 +137,8 @@ class OfficeWorld:
         x, y = None, None
 
         while not x or not y or (x, y) in obstacle_coordinates:
-            x = random.randint(1, self._map_height)
-            y = random.randint(1, self._map_width)
+            x = random.randint(0, self._map_height - 1)
+            y = random.randint(0, self._map_width - 1)
 
         return x, y
 

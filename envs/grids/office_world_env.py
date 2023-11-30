@@ -14,7 +14,7 @@ class OfficeWorldEnv(ParallelEnv):
     SECOND_AGENT_ID = "second_agent"
 
     def __init__(self):
-        self.office_world = OfficeWorld()
+        self.office_world = OfficeWorld(map_number=2)
         self.possible_agents = [self.PRIMARY_AGENT_ID, self.SECOND_AGENT_ID]
         self.id_to_agent = {
             self.PRIMARY_AGENT_ID: self._generate_agent(PrimaryAgent),
@@ -32,6 +32,7 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent]) -> Agent:
         x, y = self.office_world.generate_coordinates()
+        
 
         return agent_class(x, y)
 
@@ -78,7 +79,9 @@ class OfficeWorldEnv(ParallelEnv):
     def step(self, actions):
         for agent_id, agent in self.id_to_agent.items():
             agent_action = actions[agent_id]
-            agent.act(agent_action)
+            
+            if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
+                agent.act(agent_action)
 
         self.timestep += 1
 
@@ -88,7 +91,7 @@ class OfficeWorldEnv(ParallelEnv):
         truncations = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
 
         if self.timestep > 100:
-            rewards = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
+            rewards = {agent_id: 0 for agent_id, _ in self.id_to_agent.items()}
             truncations = {agent_id: True for agent_id, _ in self.id_to_agent.items()}
             self.agents = []
 
@@ -120,11 +123,11 @@ class OfficeWorldEnv(ParallelEnv):
                     x,
                     y,
                 ) == self.second_agent.coordinates:
-                    print("A1A2", end="")
+                    print("12", end="")
                 elif (x, y) == self.primary_agent.coordinates:
-                    print("A1", end="")
+                    print("1", end="")
                 elif (x, y) == self.second_agent.coordinates:
-                    print("A2", end="")
+                    print("2", end="")
                 elif (x, y) in self.office_world.objects:
                     print(self.office_world.objects[(x, y)], end="")
                 else:
@@ -145,3 +148,54 @@ class OfficeWorldEnv(ParallelEnv):
                     else:
                         print(" ", end="")
                 print()
+
+    def render(self, mode="human"):
+        if mode == "human":
+            # commands
+            str_to_action = {"w": 0, "d": 1, "s": 2, "a": 3}
+
+            # play the game!
+            done = True
+            while True:
+                if done:
+                    print("New episode --------------------------------")
+                    observations = self.reset()
+                    # print("Current task:", self.rm_files[self.current_rm_id])
+                    self.show()
+                    print("Features:", observations)
+                    done = False
+                    # print("RM state:", self.current_u_id)
+                    # print("Events:", self.env.get_events())
+
+                print(
+                    "\nSelect action for the primary agent?(WASD keys or q to quite) ",
+                    end="",
+                )
+                action1 = input()
+                print(
+                    "\nSelect action for the second agent?(WASD keys or q to quite) ",
+                    end="",
+                )
+                action2 = input()
+                print()
+
+                if action1 == "q" or action2 == "q":
+                    break
+
+                # Executing action
+                if action1 in str_to_action and action2 in str_to_action:
+                    actions_to_execute = {
+                        self.PRIMARY_AGENT_ID: str_to_action[action1],
+                        self.SECOND_AGENT_ID: str_to_action[action2],
+                    }
+
+                    self.step(actions_to_execute)
+                    self.show()
+                    # print("Features:", obs)
+                    # print("Reward:", rew)
+                    # print("RM state:", self.current_u_id)
+                    # print("Events:", self.env.get_events())
+                else:
+                    print("Forbidden action")
+        else:
+            raise NotImplementedError

@@ -76,7 +76,7 @@ class PrimaryAgent(Agent):
         self.change_position(x, y)
 
 
-class SecondAgent(Agent):
+class SecondAgent(Agent):   
     def __init__(self, x: int, y: int):
         super().__init__(x, y, SECOND_AGENT_ACTION_SPACE_NUMBER)
 
