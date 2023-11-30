@@ -108,13 +108,13 @@ class OfficeWorldEnv(ParallelEnv):
                         print("_", end="")
                         if 0 < x < 11:
                             print("_", end="")
-                    if (x, y, Actions.up) in self.office_world.forbidden_transitions:
+                    if (x, y, Actions.UP) in self.office_world.forbidden_transitions:
                         print("_", end="")
                     else:
                         print(" ", end="")
                 print()
             for x in range(12):
-                if (x, y, Actions.left) in self.office_world.forbidden_transitions:
+                if (x, y, Actions.LEFT) in self.office_world.forbidden_transitions:
                     print("|", end="")
                 elif x % 3 == 0:
                     print(" ", end="")
@@ -132,7 +132,7 @@ class OfficeWorldEnv(ParallelEnv):
                     print(self.office_world.objects[(x, y)], end="")
                 else:
                     print(" ", end="")
-                if (x, y, Actions.right) in self.office_world.forbidden_transitions:
+                if (x, y, Actions.RIGHT) in self.office_world.forbidden_transitions:
                     print("|", end="")
                 elif x % 3 == 2:
                     print(" ", end="")
@@ -143,7 +143,7 @@ class OfficeWorldEnv(ParallelEnv):
                         print("_", end="")
                         if 0 < x < 11:
                             print("_", end="")
-                    if (x, y, Actions.down) in self.office_world.forbidden_transitions:
+                    if (x, y, Actions.DOWN) in self.office_world.forbidden_transitions:
                         print("_", end="")
                     else:
                         print(" ", end="")

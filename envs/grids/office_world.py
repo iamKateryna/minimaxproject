@@ -75,25 +75,25 @@ class OfficeWorld:
 
         for x in range(self._map_height):
             for y in [0, 3, 6]:
-                location_to_forbidden_actions[(x, y)].add(Actions.down)
-                location_to_forbidden_actions[(x, y + 2)].add(Actions.up)
+                location_to_forbidden_actions[(x, y)].add(Actions.DOWN)
+                location_to_forbidden_actions[(x, y + 2)].add(Actions.UP)
         for y in range(self._map_width):
             for x in [0, 3, 6, 9]:
-                location_to_forbidden_actions[(x, y)].add(Actions.left)
-                location_to_forbidden_actions[(x + 2, y)].add(Actions.right)
+                location_to_forbidden_actions[(x, y)].add(Actions.LEFT)
+                location_to_forbidden_actions[(x + 2, y)].add(Actions.RIGHT)
 
         # adding 'doors'
         for y in [1, 7]:
             for x in [2, 5, 8]:
-                location_to_forbidden_actions[(x, y)].remove(Actions.right)
-                location_to_forbidden_actions[(x + 1, y)].remove(Actions.left)
+                location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
+                location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)
 
         for x in [1, 4, 7, 10]:
-            location_to_forbidden_actions[(x, 5)].remove(Actions.up)
-            location_to_forbidden_actions[(x, 6)].remove(Actions.down)
+            location_to_forbidden_actions[(x, 5)].remove(Actions.UP)
+            location_to_forbidden_actions[(x, 6)].remove(Actions.DOWN)
         for x in [1, 10]:
-            location_to_forbidden_actions[(x, 2)].remove(Actions.up)
-            location_to_forbidden_actions[(x, 3)].remove(Actions.down)
+            location_to_forbidden_actions[(x, 2)].remove(Actions.UP)
+            location_to_forbidden_actions[(x, 3)].remove(Actions.DOWN)
 
         return location_to_forbidden_actions
 

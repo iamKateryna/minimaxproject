@@ -1,6 +1,4 @@
 from enum import IntEnum, StrEnum
-from tkinter import RIGHT
-from typing import Union
 import gymnasium.spaces
 from abc import abstractmethod
 import numpy as np
@@ -65,13 +63,13 @@ class PrimaryAgent(Agent):
         action = Actions(action_id)
         x, y = self.coordinates
 
-        if action == Actions.up:
+        if action == Actions.UP:
             y += 1
-        elif action == Actions.down:
+        elif action == Actions.DOWN:
             y -= 1
-        elif action == Actions.left:
+        elif action == Actions.LEFT:
             x -= 1
-        elif action == Actions.right:
+        elif action == Actions.RIGHT:
             x += 1
 
         self.change_position(x, y)
@@ -85,13 +83,13 @@ class SecondAgent(Agent):
         action = Actions(action_id)
         x, y = self.coordinates
 
-        if action == Actions.up:
+        if action == Actions.UP:
             y += 1
-        elif action == Actions.down:
+        elif action == Actions.DOWN:
             y -= 1
-        elif action == Actions.left:
+        elif action == Actions.LEFT:
             x -= 1
-        elif action == Actions.right:
+        elif action == Actions.RIGHT:
             x += 1
 
         self.change_position(x, y)
