@@ -1,169 +1,178 @@
-from envs.grids.game_objects import Actions
-import random, math, os
+from types import NoneType
+from typing import Type
+import random
 import numpy as np
+from .game_objects import *
+from collections import defaultdict
+import gymnasium.spaces
 
 
 class OfficeWorld:
+    OBSTACLE_OBJECT_TYPES = [OfficeWorldObjects.PLANT, 
+                             OfficeWorldObjects.MAIL,
+                             OfficeWorldObjects.COFFEE,
+                             OfficeWorldObjects.OFFICE]
 
-    def __init__(self):
-        self._load_map()
-        self.map_height, self.map_width = 12,9
+    MAP_1_OBJECTS: dict[tuple[int, int], OfficeWorldObjects] = {
+        (1, 1): OfficeWorldObjects.A,
+        (1, 7): OfficeWorldObjects.B,
+        (10, 7): OfficeWorldObjects.C,
+        (10, 1): OfficeWorldObjects.D,
+        (7, 4): OfficeWorldObjects.MAIL,
+        (8, 2): OfficeWorldObjects.COFFEE,
+        (3, 6): OfficeWorldObjects.COFFEE,
+        (4, 4): OfficeWorldObjects.OFFICE,
+        (4, 1): OfficeWorldObjects.PLANT,
+        (7, 1): OfficeWorldObjects.PLANT,
+        (4, 7): OfficeWorldObjects.PLANT,
+        (7, 7): OfficeWorldObjects.PLANT,
+        (1, 4): OfficeWorldObjects.PLANT,
+        (10, 4): OfficeWorldObjects.PLANT,
+    }
+    
+    MAP_2_OBJECTS: dict[tuple[int, int], str] = {
+        (7, 4): OfficeWorldObjects.MAIL,
+        (8, 2): OfficeWorldObjects.COFFEE,
+        (3, 6): OfficeWorldObjects.COFFEE,
+        (4, 4): OfficeWorldObjects.OFFICE,
+        (4, 1): OfficeWorldObjects.PLANT,
+        (7, 1): OfficeWorldObjects.PLANT,
+        (4, 7): OfficeWorldObjects.PLANT,
+        (7, 7): OfficeWorldObjects.PLANT,
+        (1, 4): OfficeWorldObjects.PLANT,
+        (10, 4): OfficeWorldObjects.PLANT,
+    }
+    
 
-    def reset(self):
-        # TO DO: place both agents on the map randomly (avoid decorations)
-        self.agent = (10,1) # agent_1
-        # TO DO: add agent_2 with the same action space, modify game's logic for 2 agents
+    def __init__(self, map_height: int = 12, map_width: int = 9, map_number: int = 1):
+        self._objects = self._load_map_objects(map_number)
+        self._map_height = map_height
+        self._map_width = map_width
+        self._forbidden_actions = self._load_forbidden_actions()
+        self._forbidden_transitions = self._load_forbidden_transitions()
 
-    def execute_action(self, a):
-        """
-        We execute 'action' in the game
-        """
-        x,y = self.agent
-        self.agent = self._get_new_position(x,y,a)
+    def _get_obstacle_coordinates(self) -> list[tuple[int, int]]:
+        obstacle_coordinates = []
 
-    def _get_new_position(self, x, y, a):
-        action = Actions(a)
-        # executing action
-        if (x,y,action) not in self.forbidden_transitions:
-            if action == Actions.up   : y+=1
-            if action == Actions.down : y-=1
-            if action == Actions.left : x-=1
-            if action == Actions.right: x+=1
-        return x,y
+        for coordinates, object_ in self._objects.items():
+            if object_ in self.OBSTACLE_OBJECT_TYPES:
+                obstacle_coordinates.append(coordinates)
 
+        return obstacle_coordinates
 
-    def get_true_propositions(self):
+    def _load_forbidden_transitions(self) -> set[tuple[int, int, Actions]]:
+        if not self._forbidden_actions:
+            raise TypeError
+
+        return {
+            (*location, action)
+            for location, forbidden_actions in self._forbidden_actions.items()
+            for action in forbidden_actions
+        }
+
+    def _load_forbidden_actions(self) -> dict[tuple[int, int], set[Actions]]:
+        location_to_forbidden_actions = defaultdict(set)
+
+        for x in range(self._map_height):
+            for y in [0, 3, 6]:
+                location_to_forbidden_actions[(x, y)].add(Actions.DOWN)
+                location_to_forbidden_actions[(x, y + 2)].add(Actions.UP)
+        for y in range(self._map_width):
+            for x in [0, 3, 6, 9]:
+                location_to_forbidden_actions[(x, y)].add(Actions.LEFT)
+                location_to_forbidden_actions[(x + 2, y)].add(Actions.RIGHT)
+
+        # adding 'doors'
+        for y in [1, 7]:
+            for x in [2, 5, 8]:
+                location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
+                location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)
+
+        for x in [1, 4, 7, 10]:
+            location_to_forbidden_actions[(x, 5)].remove(Actions.UP)
+            location_to_forbidden_actions[(x, 6)].remove(Actions.DOWN)
+        for x in [1, 10]:
+            location_to_forbidden_actions[(x, 2)].remove(Actions.UP)
+            location_to_forbidden_actions[(x, 3)].remove(Actions.DOWN)
+
+        return location_to_forbidden_actions
+
+    def _load_map_objects(self, map_number) -> dict[tuple[int, int], OfficeWorldObjects]:
+        if map_number == 1:
+            objects = self.MAP_1_OBJECTS
+        elif map_number == 2:
+            objects = self.MAP_2_OBJECTS
+        else:
+            raise NotImplementedError
+
+        return objects
+
+    @property
+    def observation_space(self):
+        return gymnasium.spaces.Box(
+            low=0,
+            high=max([self._map_height, self._map_width]),
+            shape=(2,),
+            dtype=np.uint8,
+        )
+
+    @property
+    def forbidden_transitions(self) -> set[tuple[int, int, Actions]]:
+        return self._forbidden_transitions
+
+    # @property
+    # def forbidden_actions(self) -> dict[tuple[int, int], set[Actions]]:
+    #     return self._forbidden_actions
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return (self._map_height, self._map_width)
+
+    @property
+    def objects(self) -> dict[tuple[int, int], OfficeWorldObjects]:
+        return self._objects
+
+    def generate_coordinates(self) -> tuple[int, int]:
+        obstacle_coordinates = self._get_obstacle_coordinates()
+        x, y = None, None
+
+        while not x or not y or (x, y) in obstacle_coordinates:
+            x = random.randint(0, self._map_height - 1)
+            y = random.randint(0, self._map_width - 1)
+
+        return x, y
+
+    def get_forbidden_actions(self, coordinates) -> set[Actions]:
+        return self._forbidden_actions[coordinates]
+
+    def get_true_propositions(self, agent_coordinates: tuple[int, int]):
         """
         Returns the string with the propositions that are True in this state
         """
         ret = ""
-        if self.agent in self.objects:
-            ret += self.objects[self.agent]
+
+        if agent_coordinates in self._objects:
+            ret += self._objects[agent_coordinates]
+
         return ret
 
-    def get_features(self):
-        """
-        Returns the features of the current state (i.e., the location of the agent)
-        """
-        x,y = self.agent
-        return np.array([x,y])
+    # def get_model(self):
+    #     """
+    #     This method returns a model of the environment.
+    #     We use the model to compute optimal policies using value iteration.
+    #     The optimal policies are used to set the average reward per step of each task to 1.
+    #     """
+    #     S = [(x, y) for x in range(self.map_height) for y in range(self.map_width)]  # States
+    #     A = self.actions.copy()  # Actions
+    #     L = self.objects.copy()  # Labeling function
+    #     # Transitions (s,a) -> s' (they are deterministic)
+    #     T = {}
 
-    def show(self):
-        for y in range(8,-1,-1):
-            if y % 3 == 2:
-                for x in range(12):
-                    if x % 3 == 0:
-                        print("_",end="")
-                        if 0 < x < 11:
-                            print("_",end="")
-                    if (x,y,Actions.up) in self.forbidden_transitions:
-                        print("_",end="")
-                    else:
-                        print(" ",end="")
-                print()                
-            for x in range(12):
-                if (x,y,Actions.left) in self.forbidden_transitions:
-                    print("|",end="")
-                elif x % 3 == 0:
-                    print(" ",end="")
-                if (x,y) == self.agent:
-                    print("A",end="")
-                elif (x,y) in self.objects:
-                    print(self.objects[(x,y)],end="")
-                else:
-                    print(" ",end="")
-                if (x,y,Actions.right) in self.forbidden_transitions:
-                    print("|",end="")
-                elif x % 3 == 2:
-                    print(" ",end="")
-            print()      
-            if y % 3 == 0:      
-                for x in range(12):
-                    if x % 3 == 0:
-                        print("_",end="")
-                        if 0 < x < 11:
-                            print("_",end="")
-                    if (x,y,Actions.down) in self.forbidden_transitions:
-                        print("_",end="")
-                    else:
-                        print(" ",end="")
-                print()                
+    #     for state in S:
+    #         x, y = s
 
-    def get_model(self):
-        """
-        This method returns a model of the environment. 
-        We use the model to compute optimal policies using value iteration.
-        The optimal policies are used to set the average reward per step of each task to 1.
-        """
-        S = [(x,y) for x in range(12) for y in range(9)] # States
-        A = self.actions.copy() # Actions
-        L = self.objects.copy() # Labeling function
-        T = {}                  # Transitions (s,a) -> s' (they are deterministic)
-        for s in S:
-            x,y = s
-            for a in A:
-                T[(s,a)] = self._get_new_position(x,y,a)
-        return S,A,L,T # SALT xD
-
-    def _load_map(self):
-        # Creating the map
-        self.objects = {}
-        self.objects[(1,1)] = "a"
-        self.objects[(1,7)] = "b"
-        self.objects[(10,7)] = "c"
-        self.objects[(10,1)] = "d"
-        self.objects[(7,4)] = "e"  # MAIL
-        self.objects[(8,2)] = "f"  # COFFEE
-        self.objects[(3,6)] = "f"  # COFFEE
-        self.objects[(4,4)] = "g"  # OFFICE
-        self.objects[(4,1)] = "n"  # PLANT
-        self.objects[(7,1)] = "n"  # PLANT
-        self.objects[(4,7)] = "n"  # PLANT
-        self.objects[(7,7)] = "n"  # PLANT
-        self.objects[(1,4)] = "n"  # PLANT
-        self.objects[(10,4)] = "n" # PLANT
-        
-        # Latte version of the env modifications
-        # self.objects[(0,8)] = "w" # Whipped cream
-        # self.objects[(5,3)] = "c"  # Coffee
-        # self.objects[(0,5)] = "c"  # Coffee
-        # self.objects[(7,7)] = "d"  # Office
-        # self.objects[(11,4)] = "m" # Milk
-        # Adding walls
-        self.forbidden_transitions = set()
-        # general grid
-        for x in range(12):
-            for y in [0,3,6]:
-                self.forbidden_transitions.add((x,y,Actions.down)) 
-                self.forbidden_transitions.add((x,y+2,Actions.up))
-        for y in range(9):
-            for x in [0,3,6,9]:
-                self.forbidden_transitions.add((x,y,Actions.left))
-                self.forbidden_transitions.add((x+2,y,Actions.right))
-        # adding 'doors'
-        for y in [1,7]:
-            for x in [2,5,8]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
-
-        # Latte version of the env modifications
-        # for y in [0,3]:
-        #     for x in [2]:
-        #         self.forbidden_transitions.remove((x,y,Actions.right))
-        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
-        # for y in [4, 8]:
-        #     for x in [8]:
-        #         self.forbidden_transitions.remove((x,y,Actions.right))
-        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
-        # for y in [2]:
-        #     for x in [5]:
-        #         self.forbidden_transitions.remove((x,y,Actions.right))
-        #         self.forbidden_transitions.remove((x+1,y,Actions.left))
-        for x in [1,4,7,10]:
-            self.forbidden_transitions.remove((x,5,Actions.up))
-            self.forbidden_transitions.remove((x,6,Actions.down))
-        for x in [1, 10]:
-            self.forbidden_transitions.remove((x,2,Actions.up))
-            self.forbidden_transitions.remove((x,3,Actions.down))
-        # Adding the agent
-        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
+    #     for s in S:
+    #         x, y = s
+    #         for a in A:
+    #             T[(s, a)] = self._get_new_position(x, y, a)
+    #     return S, A, L, T  # SALT xD
