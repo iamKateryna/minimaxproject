@@ -1,8 +1,8 @@
 from re import L
 from copy import copy
 import functools
-from .game_objects import *
-from .office_world import OfficeWorld
+from game_objects import *
+from office_world import OfficeWorld
 from pettingzoo import ParallelEnv
 
 
@@ -14,7 +14,7 @@ class OfficeWorldEnv(ParallelEnv):
     SECOND_AGENT_ID = "second_agent"
 
     def __init__(self):
-        self.office_world = OfficeWorld(map_number=2)
+        self.office_world = OfficeWorld(map_number=3)
         self.possible_agents = [self.PRIMARY_AGENT_ID, self.SECOND_AGENT_ID]
         self.id_to_agent = {
             self.PRIMARY_AGENT_ID: self._generate_agent(PrimaryAgent),
