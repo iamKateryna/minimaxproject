@@ -42,6 +42,13 @@ class OfficeWorld:
         (1, 4): OfficeWorldObjects.PLANT,
         (10, 4): OfficeWorldObjects.PLANT,
     }
+
+    MAP_3_OBJECTS: dict[tuple[int, int], str] = {
+        (7, 4): OfficeWorldObjects.MAIL,
+        (8, 2): OfficeWorldObjects.COFFEE,
+        (3, 6): OfficeWorldObjects.COFFEE,
+        (4, 4): OfficeWorldObjects.OFFICE,
+    }
     
 
     def __init__(self, map_height: int = 12, map_width: int = 9, map_number: int = 1):
@@ -102,6 +109,8 @@ class OfficeWorld:
             objects = self.MAP_1_OBJECTS
         elif map_number == 2:
             objects = self.MAP_2_OBJECTS
+        elif map_number == 3:
+            objects = self.MAP_3_OBJECTS
         else:
             raise NotImplementedError
 
@@ -145,7 +154,7 @@ class OfficeWorld:
     def get_forbidden_actions(self, coordinates) -> set[Actions]:
         return self._forbidden_actions[coordinates]
 
-    def get_true_propositions(self, agent_coordinates: tuple[int, int]):
+    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int):
         """
         Returns the string with the propositions that are True in this state
         """
@@ -153,6 +162,7 @@ class OfficeWorld:
 
         if agent_coordinates in self._objects:
             ret += self._objects[agent_coordinates]
+            ret += str(suffix)
 
         return ret
 
