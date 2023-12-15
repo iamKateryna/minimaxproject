@@ -1,10 +1,10 @@
 from re import L
 from copy import copy
 import functools
-from game_objects import *
-from office_world import OfficeWorld
+from .game_objects import *
+from .office_world import OfficeWorld
 from pettingzoo import ParallelEnv
-
+from reward_machines.rm_environment import RewardMachineEnv
 
 class OfficeWorldEnv(ParallelEnv):
     metadata = {
@@ -14,7 +14,7 @@ class OfficeWorldEnv(ParallelEnv):
     SECOND_AGENT_ID = "second_agent"
 
     def __init__(self):
-        self.office_world = OfficeWorld(map_number=3)
+        self.office_world = OfficeWorld(map_number=2)
         self.possible_agents = [self.PRIMARY_AGENT_ID, self.SECOND_AGENT_ID]
         self.id_to_agent = {
             self.PRIMARY_AGENT_ID: self._generate_agent(PrimaryAgent),
@@ -32,7 +32,8 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent]) -> Agent:
         x, y = self.office_world.generate_coordinates()
-        
+        # place both agents next to the closest coffee to the office
+        # x, y = 3, 7
 
         return agent_class(x, y)
 
@@ -55,6 +56,23 @@ class OfficeWorldEnv(ParallelEnv):
             }
 
         return observations
+    
+     
+    def _get_events(self):
+        events = ""
+        
+        for agent_id, agent in self.id_to_agent.items():
+             
+            if agent_id == self.PRIMARY_AGENT_ID:
+                agent_suffix = 1
+            elif agent_id == self.SECOND_AGENT_ID:
+                agent_suffix = 2
+                
+            event = self.office_world.get_true_propositions(
+                agent.coordinates, agent_suffix)
+            events += event
+
+        return events
 
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
@@ -79,27 +97,33 @@ class OfficeWorldEnv(ParallelEnv):
     def step(self, actions):
         for agent_id, agent in self.id_to_agent.items():
             agent_action = actions[agent_id]
-            
+
             if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
                 agent.act(agent_action)
 
         self.timestep += 1
 
-        terminations = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
+        terminations = {agent_id: False for agent_id,
+                        _ in self.id_to_agent.items()}
         rewards = {agent_id: 0 for agent_id, _ in self.id_to_agent.items()}
 
-        truncations = {agent_id: False for agent_id, _ in self.id_to_agent.items()}
+        truncations = {agent_id: False for agent_id,
+                       _ in self.id_to_agent.items()} # always false, RMs stop the game
 
         if self.timestep > 100:
             rewards = {agent_id: 0 for agent_id, _ in self.id_to_agent.items()}
-            truncations = {agent_id: True for agent_id, _ in self.id_to_agent.items()}
+            truncations = {agent_id: True for agent_id,
+                           _ in self.id_to_agent.items()}
             self.agents = []
 
         observations = self._get_observations()
         infos = {agent_id: {} for agent_id, _ in self.id_to_agent.items()}
 
         return observations, rewards, terminations, truncations, infos
+    
 
+    # def show(self):
+    #     self.env.show()
     def show(self):
         for y in range(8, -1, -1):
             if y % 3 == 2:
@@ -163,6 +187,7 @@ class OfficeWorldEnv(ParallelEnv):
                     # print("Current task:", self.rm_files[self.current_rm_id])
                     self.show()
                     print("Features:", observations)
+                    print("Events:", self._get_events())
                     done = False
                     # print("RM state:", self.current_u_id)
                     # print("Events:", self.env.get_events())
@@ -172,6 +197,10 @@ class OfficeWorldEnv(ParallelEnv):
                     end="",
                 )
                 action1 = input()
+
+                if action1 == "q":
+                    break
+
                 print(
                     "\nSelect action for the second agent?(WASD keys or q to quite) ",
                     end="",
@@ -179,8 +208,11 @@ class OfficeWorldEnv(ParallelEnv):
                 action2 = input()
                 print()
 
-                if action1 == "q" or action2 == "q":
+                if action2 == "q":
                     break
+
+                # if action1 == "q" or action2 == "q":
+                #     break
 
                 # Executing action
                 if action1 in str_to_action and action2 in str_to_action:
@@ -191,10 +223,10 @@ class OfficeWorldEnv(ParallelEnv):
 
                     self.step(actions_to_execute)
                     self.show()
-                    # print("Features:", obs)
+                    print("Events:", self._get_events())
+                    # print("Features:", observations)
                     # print("Reward:", rew)
                     # print("RM state:", self.current_u_id)
-                    # print("Events:", self.env.get_events())
                 else:
                     print("Forbidden action")
         else:
