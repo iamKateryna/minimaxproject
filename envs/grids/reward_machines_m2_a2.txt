@@ -3,7 +3,7 @@
 (0,0, '!f2&!n2&!f1&!n1', ConstantRewardFunction(0))
 (0,1, 'f2&!n2&!f1&!n1', ConstantRewardFunction(0))
 (0,2, '!f2&!n2&f1&!n1', ConstantRewardFunction(0))
-(0,3, 'f2&!n2&!f1&!n1', ConstantRewardFunction(0))
+(0,3, 'f2&!n2&f1&!n1', ConstantRewardFunction(0))
 (0,4, 'n2&n1', ConstantRewardFunction(0))
 (0,4, '!n2&n1', ConstantRewardFunction(1))
 (0,4, 'n2&!n1', ConstantRewardFunction(-1))
