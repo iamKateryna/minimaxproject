@@ -10,7 +10,7 @@ class RewardMachine:
         self.u0 = None       # initial state
         self.delta_u    = {} # state-transition function
         self.delta_r    = {} # reward-transition function
-        self.terminal_u = -1  # All terminal states are sent to the same terminal state with id *-1*
+        self.terminal_u = 4  # All terminal states are sent to the same terminal state with id *-1*
         self._load_reward_machine(file)
         self.known_transitions = {} # Auxiliary variable to speed up computation of the next RM state
 
@@ -44,7 +44,7 @@ class RewardMachine:
         next_u = self.get_next_state(u, true_propositions)
         done = (next_u == self.terminal_u)
         # Getting the reward
-        reward = self._get_reward(u,next_u,state_info, env_done)
+        reward = self._get_reward(u,next_u, true_propositions)
 
         return next_u, reward, done
     
@@ -53,14 +53,21 @@ class RewardMachine:
         return self.U
     
     # figure out if we need env_done here
-    def _get_reward(self, u, next_u, s_info, env_done): 
+    def _get_reward(self, u, next_u, true_propositions): 
         """
         Returns the reward associated to this transition.
         """
         # Getting reward from the RM
         reward = 0 # NOTE: if the agent falls from the reward machine it receives reward of zero
         if u in self.delta_r and next_u in self.delta_r[u]:
-            reward += self.delta_r[u][next_u].get_reward(s_info)
+            dnf_formulas = self.delta_r[u][next_u].keys()
+
+            for formula in dnf_formulas:
+                if evaluate_dnf(formula, true_propositions):
+                    reward += self.delta_r[u][next_u][formula].get_reward()
+            # print(f"u-> {u}")
+            # print(f"u-> {next_u}")
+            # print(f"Delta r-> {self.delta_r}")
         # Returning final reward
         return reward
     
@@ -110,7 +117,10 @@ class RewardMachine:
             if u not in self.delta_r:
                 self.delta_r[u] = {}
 
-            self.delta_r[u][next_u] = reward_function
+            if next_u not in self.delta_r[u]:
+                self.delta_r[u][next_u] = {}
+
+            self.delta_r[u][next_u][dnf_formula] = reward_function
             
         # Sorting self.U... just because... 
         self.U = sorted(self.U)

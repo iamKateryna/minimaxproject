@@ -16,5 +16,5 @@ class ConstantRewardFunction(RewardFunction):
     def get_type(self):
         return "constant"
 
-    def get_reward(self, s_info):
+    def get_reward(self):
         return self.constant

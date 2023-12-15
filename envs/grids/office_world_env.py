@@ -32,6 +32,8 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent]) -> Agent:
         x, y = self.office_world.generate_coordinates()
+        # place both agents next to the closest coffee to the office
+        # x, y = 3, 7
 
         return agent_class(x, y)
 

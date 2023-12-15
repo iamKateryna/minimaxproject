@@ -4,10 +4,6 @@ from .reward_machine import RewardMachine
 from gymnasium import spaces
 import numpy as np
 
-# office_env = OfficeWorldEnv()
-# reward_machine_files = [file 1,file 2]
-# reward_machine_env = RewardMachineEnv(office_env, reward_machine_files)
-
 
 class RewardMachineEnv(BaseParallelWrapper):
     def __init__(self, env, reward_machine_files):
@@ -37,7 +33,6 @@ class RewardMachineEnv(BaseParallelWrapper):
         self.num_rm_states = len(self.reward_machines[0].get_states()) *2 # agents are identical, their RMs have the same number of states
 
         # The observation space is a dictionary including the env features and a one-hot representation of the states in the reward machines
-        # self.observation_dict = spaces.Dict({'features': env.observation_space(self.env.PRIMARY_AGENT_ID), 
         self.observation_dict = spaces.Dict({
             'features': spaces.Dict({
                 'primary_agent': spaces.Dict({
@@ -67,10 +62,6 @@ class RewardMachineEnv(BaseParallelWrapper):
         # for terminal RM states, we give as features an array of zeros, same for both RMs
         self.reward_machine_done_features = np.zeros(self.num_rm_states)
 
-        # Selecting the current RM task (for now, we have one rm task)
-        # self.reward_machine_ids = [-1, -1] - we don't need that 
-        # self.reward_machines -- already set
-
     @property
     def _primary_agent_rm(self):
         return self.id_to_reward_machine[self.env.PRIMARY_AGENT_ID]
@@ -81,9 +72,7 @@ class RewardMachineEnv(BaseParallelWrapper):
     
     # Reseting the environment
     def reset(self):
-        self.observations, infos = self.env.reset()
-        # self.reward_machine_ids - воно нам ненадо
-        # self.current_reward_machines - у нас лише дві ревард машиниб нам не треба їх ресетати
+        self.observations, _ = self.env.reset()
         self.current_rm_state_ids =  {self.env.PRIMARY_AGENT_ID: self._primary_agent_rm.reset(),
                                       self.env.SECOND_AGENT_ID: self._second_agent_rm.reset()}
         
@@ -94,7 +83,7 @@ class RewardMachineEnv(BaseParallelWrapper):
     
 
     def step(self, actions):
-        next_observation, original_reward, env_done, truncations, info = self.env.step(actions)
+        next_observation, _, env_done, _, info = self.env.step(actions)
 
         # getting the output of the detectors and saving information for generating counterfactual experiences
         true_propositions = self.env._get_events()
@@ -112,9 +101,11 @@ class RewardMachineEnv(BaseParallelWrapper):
             self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
                                                                                                                                   true_propositions,
                                                                                                                                   info)
+            
+        # print(reward_machine_rewards)
         
         # returning the result of this action
-        done = reward_machine_dones or env_done # ??????
+        done = reward_machine_dones #or env_done # ??????
         reward_machine_observations = self.get_observation(self.observations, 
                                                            self.current_rm_state_ids, 
                                                            done)
@@ -137,8 +128,6 @@ class RewardMachineEnv(BaseParallelWrapper):
                                        'rm-state-agent-1': reward_machine_features[self.env.PRIMARY_AGENT_ID],
                                        'rm-state-agent-2': reward_machine_features[self.env.SECOND_AGENT_ID]}
         
-        print(self.observation_dict)
-        print(reward_machine_observations)
         return spaces.flatten(self.observation_dict, reward_machine_observations)
     
 
@@ -149,6 +138,7 @@ class RewardMachineEnv(BaseParallelWrapper):
 
             # play the game!
             done = True
+
             while True:
                 if done:
                     print("New episode --------------------------------")
@@ -179,9 +169,6 @@ class RewardMachineEnv(BaseParallelWrapper):
                 if action2 == "q":
                     break
 
-                # if action1 == "q" or action2 == "q":
-                #     break
-
                 # Executing action
                 if action1 in str_to_action and action2 in str_to_action:
                     actions_to_execute = {
@@ -189,15 +176,23 @@ class RewardMachineEnv(BaseParallelWrapper):
                         self.env.SECOND_AGENT_ID: str_to_action[action2],
                     }
 
-                    self.step(actions_to_execute)
-                    self.show()
+                    _, rewards, done, _ = self.step(actions_to_execute)
+                    done = any(done.values())
+
+                    self.env.show()
                     print("Features:", observations)
                     print("Events:", self.env._get_events())
                     print("RM state:", self.current_rm_state_ids)
-                    # print("Features:", observations)
-                    # print("Reward:", rew)
-                    # print("RM state:", self.current_u_id)
+                    print("Reward:", rewards)
                 else:
                     print("Forbidden action")
+
+                if done:
+                    if rewards[self.env.PRIMARY_AGENT_ID] == 1 or rewards[self.env.SECOND_AGENT_ID] == 1:
+                        print('\nThe supreme art of war is to subdue the enemy without fighting\n')
+                        break
+                    else:
+                        print("\nSometimes the prize is not worth the costs\n")
+                        break
         else:
             raise NotImplementedError
