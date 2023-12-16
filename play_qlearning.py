@@ -5,17 +5,18 @@ from rl_agents.qlearning.qlearning_agent import QLearningAgent
 from envs.grids.office_world_env import OfficeWorldEnv
 from reward_machines.rm_environment import RewardMachineEnv
 
+import rm_constants
+
 def setup_logger():
     # Configure logger
-    logging.basicConfig(filename='training_log.log',  filemode='w', level=logging.INFO,
+    logging.basicConfig(filename='training_log_qlearning.log',  filemode='w', level=logging.INFO,
                         format='%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.info("Started Logging")
 
 def main():
     setup_logger()
-    office_env = OfficeWorldEnv()
-    reward_machine_files = ['envs/grids/reward_machines_m2_a1.txt',
-                            'envs/grids/reward_machines_m2_a2.txt']
+    office_env = OfficeWorldEnv(map_number=3)
+    reward_machine_files = rm_constants.MAP_3_RMS
     env = RewardMachineEnv(office_env, reward_machine_files)
 
     action_space = office_env.primary_agent.action_space
@@ -25,7 +26,7 @@ def main():
 
     num_episodes = 100000
     total_timesteps = 1000 # per episode
-    print_freq = 100
+    print_freq = 0
     q_init = 0.02
 
     for episode in tqdm(range(num_episodes)):
@@ -51,16 +52,19 @@ def main():
             
             done = any(done.values())
 
-            for agent_id in office_env.agents:
-                learning_agents[agent_id].learn(state, actions_to_execute[agent_id], rewards[agent_id], next_state, done) 
+            # Updating the q-values
+            for agent_id in office_env.all_agents:
+                experiences = [(state, actions_to_execute[agent_id], rewards[agent_id], next_state, done)]
+                # learning_agents[agent_id].learn(state, actions_to_execute[agent_id], rewards[agent_id], next_state, done)
+                learning_agents[agent_id].learn(experiences) 
 
             state = tuple(next_state)
         
-            # if num_steps % print_freq == 0:
-            #     logging.info(f"Episode: {episode}, Num steps: {num_steps}, Reward: {total_reward}")
+            if print_freq:
+                if num_steps % print_freq == 0:
+                    logging.info(f"Episode: {episode}, Num steps: {num_steps}, Reward: {total_reward}")
 
         logging.info(f"Episode {episode+1}/{num_episodes} complete with Total Reward: {rewards}, and steps: {num_steps}")
-
 
 
 if __name__ == '__main__':
