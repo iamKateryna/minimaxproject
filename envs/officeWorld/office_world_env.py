@@ -4,7 +4,7 @@ import functools
 from .game_objects import *
 from .office_world import OfficeWorld
 from pettingzoo import ParallelEnv
-from reward_machines.rm_environment import RewardMachineEnv
+from reward_machines.reward_machine_environment import RewardMachineEnv
 
 class OfficeWorldEnv(ParallelEnv):
     metadata = {
@@ -13,12 +13,12 @@ class OfficeWorldEnv(ParallelEnv):
     PRIMARY_AGENT_ID = "primary_agent"
     SECOND_AGENT_ID = "second_agent"
 
-    def __init__(self):
-        self.office_world = OfficeWorld(map_number=2)
+    def __init__(self, map_number):
+        self.office_world = OfficeWorld(map_number=map_number)
         self.possible_agents = [self.PRIMARY_AGENT_ID, self.SECOND_AGENT_ID]
         self.id_to_agent = {
-            self.PRIMARY_AGENT_ID: self._generate_agent(PrimaryAgent),
-            self.SECOND_AGENT_ID: self._generate_agent(SecondAgent),
+            self.PRIMARY_AGENT_ID: self._generate_agent(PrimaryAgent, 1),
+            self.SECOND_AGENT_ID: self._generate_agent(SecondAgent, 2),
         }
         self.timestep = 0
 
@@ -29,11 +29,20 @@ class OfficeWorldEnv(ParallelEnv):
     @property
     def second_agent(self):
         return self.id_to_agent[self.SECOND_AGENT_ID]
+    
+    @property
+    def all_agents(self):
+        return self.possible_agents
 
-    def _generate_agent(self, agent_class: type[Agent]) -> Agent:
+    def _generate_agent(self, agent_class: type[Agent], agent_id) -> Agent:
         x, y = self.office_world.generate_coordinates()
         # place both agents next to the closest coffee to the office
         # x, y = 3, 7
+        # place both agents on an equal distance from both coffee machines
+        if agent_id == 1:
+            x, y = 9, 2
+        else:
+            x, y = 11, 2
 
         return agent_class(x, y)
 
@@ -95,6 +104,7 @@ class OfficeWorldEnv(ParallelEnv):
         return observations, infos
 
     def step(self, actions):
+
         for agent_id, agent in self.id_to_agent.items():
             agent_action = actions[agent_id]
 
@@ -110,20 +120,12 @@ class OfficeWorldEnv(ParallelEnv):
         truncations = {agent_id: False for agent_id,
                        _ in self.id_to_agent.items()} # always false, RMs stop the game
 
-        if self.timestep > 100:
-            rewards = {agent_id: 0 for agent_id, _ in self.id_to_agent.items()}
-            truncations = {agent_id: True for agent_id,
-                           _ in self.id_to_agent.items()}
-            self.agents = []
-
         observations = self._get_observations()
         infos = {agent_id: {} for agent_id, _ in self.id_to_agent.items()}
 
         return observations, rewards, terminations, truncations, infos
     
 
-    # def show(self):
-    #     self.env.show()
     def show(self):
         for y in range(8, -1, -1):
             if y % 3 == 2:
@@ -173,61 +175,52 @@ class OfficeWorldEnv(ParallelEnv):
                         print(" ", end="")
                 print()
 
-    def render(self, mode="human"):
-        if mode == "human":
-            # commands
-            str_to_action = {"w": 0, "d": 1, "s": 2, "a": 3}
+    # def render(self, mode="human"):
+    #     if mode == "human":
+    #         # commands
+    #         str_to_action = {"w": 0, "d": 1, "s": 2, "a": 3}
 
-            # play the game!
-            done = True
-            while True:
-                if done:
-                    print("New episode --------------------------------")
-                    observations = self.reset()
-                    # print("Current task:", self.rm_files[self.current_rm_id])
-                    self.show()
-                    print("Features:", observations)
-                    print("Events:", self._get_events())
-                    done = False
-                    # print("RM state:", self.current_u_id)
-                    # print("Events:", self.env.get_events())
+    #         # play the game!
+    #         done = True
+    #         while True:
+    #             if done:
+    #                 print("New episode --------------------------------")
+    #                 observations = self.reset()
+    #                 self.show()
+    #                 print("Features:", observations)
+    #                 print("Events:", self._get_events())
+    #                 done = False
 
-                print(
-                    "\nSelect action for the primary agent?(WASD keys or q to quite) ",
-                    end="",
-                )
-                action1 = input()
+    #             print(
+    #                 "\nSelect action for the primary agent?(WASD keys or q to quite) ",
+    #                 end="",
+    #             )
+    #             action1 = input()
 
-                if action1 == "q":
-                    break
+    #             if action1 == "q":
+    #                 break
 
-                print(
-                    "\nSelect action for the second agent?(WASD keys or q to quite) ",
-                    end="",
-                )
-                action2 = input()
-                print()
+    #             print(
+    #                 "\nSelect action for the second agent?(WASD keys or q to quite) ",
+    #                 end="",
+    #             )
+    #             action2 = input()
+    #             print()
 
-                if action2 == "q":
-                    break
+    #             if action2 == "q":
+    #                 break
 
-                # if action1 == "q" or action2 == "q":
-                #     break
+    #             # Executing action
+    #             if action1 in str_to_action and action2 in str_to_action:
+    #                 actions_to_execute = {
+    #                     self.PRIMARY_AGENT_ID: str_to_action[action1],
+    #                     self.SECOND_AGENT_ID: str_to_action[action2],
+    #                 }
 
-                # Executing action
-                if action1 in str_to_action and action2 in str_to_action:
-                    actions_to_execute = {
-                        self.PRIMARY_AGENT_ID: str_to_action[action1],
-                        self.SECOND_AGENT_ID: str_to_action[action2],
-                    }
-
-                    self.step(actions_to_execute)
-                    self.show()
-                    print("Events:", self._get_events())
-                    # print("Features:", observations)
-                    # print("Reward:", rew)
-                    # print("RM state:", self.current_u_id)
-                else:
-                    print("Forbidden action")
-        else:
-            raise NotImplementedError
+    #                 self.step(actions_to_execute)
+    #                 self.show()
+    #                 print("Events:", self._get_events())
+    #             else:
+    #                 print("Forbidden action")
+    #     else:
+    #         raise NotImplementedError
