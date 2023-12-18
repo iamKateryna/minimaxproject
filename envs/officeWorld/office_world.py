@@ -19,7 +19,7 @@ class OfficeWorld:
         (10, 7): OfficeWorldObjects.C,
         (10, 1): OfficeWorldObjects.D,
         (7, 4): OfficeWorldObjects.MAIL,
-        (8, 2): OfficeWorldObjects.COFFEE,
+        (8, 2): OfficeWorldObjects.COFFEE, #(10, 0): OfficeWorldObjects.COFFEE
         (3, 6): OfficeWorldObjects.COFFEE,
         (4, 4): OfficeWorldObjects.OFFICE,
         (4, 1): OfficeWorldObjects.PLANT,
@@ -32,7 +32,7 @@ class OfficeWorld:
     
     MAP_2_OBJECTS: dict[tuple[int, int], str] = {
         (7, 4): OfficeWorldObjects.MAIL,
-        (8, 2): OfficeWorldObjects.COFFEE,
+        (10, 0): OfficeWorldObjects.COFFEE,
         (3, 6): OfficeWorldObjects.COFFEE,
         (4, 4): OfficeWorldObjects.OFFICE,
         (4, 1): OfficeWorldObjects.PLANT,
@@ -45,7 +45,7 @@ class OfficeWorld:
 
     MAP_3_OBJECTS: dict[tuple[int, int], str] = {
         (7, 4): OfficeWorldObjects.MAIL,
-        (8, 2): OfficeWorldObjects.COFFEE,
+        (10, 0): OfficeWorldObjects.COFFEE,
         (3, 6): OfficeWorldObjects.COFFEE,
         (4, 4): OfficeWorldObjects.OFFICE,
     }
