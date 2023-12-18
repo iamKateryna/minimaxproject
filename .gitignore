@@ -1,7 +1,6 @@
 .vscode/
 .DS_Store
 __pycache__
-training_log_qlearning.log
-training_log_qrm.log
+logs/
 plots/
 archive/
