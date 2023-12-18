@@ -33,7 +33,7 @@ class RewardMachine:
         return self.known_transitions[(u,true_propositions)]
 
 
-    def step(self, u, true_propositions, state_info, env_done=False):
+    def step(self, u, true_propositions):
         """
         Emulates an step on the reward machine from state *u1* when observing *true_props*.
         The rest of the parameters are for computing the reward when working with non-simple RMs: s_info (extra state information to compute the reward).
