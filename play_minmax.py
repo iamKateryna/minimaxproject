@@ -7,7 +7,6 @@ from reward_machines.reward_machine_environment import RewardMachineEnv
 from reward_machines.reward_machine_wrapper import RewardMachineWrapper
 
 import rm_constants
-from defaults import grid_environment
 
 def setup_logger(filename):
     # Configure logger
@@ -15,6 +14,12 @@ def setup_logger(filename):
                         format='%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.info("Started Logging")
 
+def grid_environment():
+    num_episodes = 100000
+    total_timesteps = 2500
+    print_freq = 0
+    q_init=2.0
+    return num_episodes, total_timesteps, print_freq, q_init
 
 def main(filename, use_crm, map_number, reward_machine_files):
     use_crm = False
@@ -53,7 +58,7 @@ def main(filename, use_crm, map_number, reward_machine_files):
                     learning_agents[agent_id].q_table[state[agent_id]] = {(action_1, action_2): q_init 
                                                                           for action_1 in range(action_space.n)
                                                                           for action_2 in range(action_space.n)}
-                action = learning_agents[agent_id].get_action(state[agent_id])
+                action = learning_agents[agent_id].get_action(state[agent_id], episode)
                 actions_to_execute[agent_id] = action
             
             # print(f'Actions to exec: {actions_to_execute}')
@@ -90,7 +95,7 @@ def main(filename, use_crm, map_number, reward_machine_files):
 if __name__ == '__main__':
 
     use_crm = False
-    map_number=2
-    reward_machine_files = rm_constants.MAP_2_RMS
+    map_number=3
+    reward_machine_files = rm_constants.MAP_3_RMS
     
     main(f'logs/training_log_minmax_{map_number}.log', use_crm, map_number, reward_machine_files)
