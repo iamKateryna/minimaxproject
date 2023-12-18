@@ -80,7 +80,7 @@ class RewardMachineEnv(BaseParallelWrapper):
         reward_machines_observation = {}
 
         for agent_id, _ in self.id_to_reward_machine.items():
-            reward_machines_observation[agent_id] = self.get_observation(self.observation, agent_id, reward_machine_dones[agent_id])
+            reward_machines_observation[agent_id] = self.get_observation(self.observation, self.current_rm_state_ids[agent_id], agent_id, reward_machine_dones[agent_id])
 
         return reward_machines_observation
     
@@ -108,18 +108,18 @@ class RewardMachineEnv(BaseParallelWrapper):
         reward_machine_observations = {}    
         done = reward_machine_dones 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
-            reward_machine_observations[agent_id] = self.get_observation(next_observation, agent_id, done[agent_id])
+            reward_machine_observations[agent_id] = self.get_observation(next_observation, self.current_rm_state_ids[agent_id], agent_id, done[agent_id])
         
         return reward_machine_observations, reward_machine_rewards, done, info
     
     
     # add RM state to the observation
-    def get_observation(self, observation, agent_id, reward_machine_done):
+    def get_observation(self, observation, rm_state_id, agent_id, reward_machine_done):
 
         if reward_machine_done:
             reward_machine_features = self.reward_machine_done_features 
         else:
-            reward_machine_features = self.reward_machine_state_features[(agent_id, self.current_rm_state_ids[agent_id])]
+            reward_machine_features = self.reward_machine_state_features[(agent_id, rm_state_id)]
 
         reward_machine_observations = {'features': observation, 
                                        'rm-state': reward_machine_features}

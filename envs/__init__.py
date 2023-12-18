@@ -1,5 +1,3 @@
-from gym.envs.registration import register
-
 # ----------------------------------------- OFFICE
 # register(
 #     id='Office-v0',
