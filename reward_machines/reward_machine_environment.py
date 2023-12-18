@@ -95,6 +95,7 @@ class RewardMachineEnv(BaseParallelWrapper):
         # init reward_machine_rewards, reward_machine_dones
         reward_machine_rewards = {agent_id: 0 for agent_id, _ in self.id_to_reward_machine.items()}
         reward_machine_dones = {agent_id: False for agent_id, _ in self.id_to_reward_machine.items()}
+        # print(f'RM STATE IDs {self.current_rm_state_ids}')
 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
             # update RMs state
@@ -104,6 +105,7 @@ class RewardMachineEnv(BaseParallelWrapper):
             # saving information for generating counterfactual experiences
             self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
             
+        # print(f'RM STATE IDs {self.current_rm_state_ids}')
         self.observation = next_observation
         reward_machine_observations = {}    
         done = reward_machine_dones 

@@ -35,7 +35,6 @@ class QLearningAgent:
 
         # return best_action
 
-    
 
     def get_action(self, state):
         if random.random() < self.epsilon:
@@ -44,12 +43,15 @@ class QLearningAgent:
             return self.get_policy(state)
         # return self.get_policy(state)
 
-    # experience = [..., (state, action, reward, next_state, done), ...]
+    # experience = [(state, action, reward, next_state, done) (state, action, reward, next_state, done), ...]
     def learn(self, experience):
+
         for state, action, reward, next_state, done in experience:
+
             q_table = self.get_qvalue(state, action)
             if done:
                 value = reward
             else: 
                 value = reward + self.gamma * self.get_value(next_state)
+            
             self.q_table[(state, action)] = q_table + self.lr * (value - q_table)
