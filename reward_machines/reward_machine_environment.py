@@ -32,20 +32,6 @@ class RewardMachineEnv(BaseParallelWrapper):
         self.reward_machines = list(self.id_to_reward_machine.values())
         self.num_rm_states = len(self.reward_machines[0].get_states()) *2 # agents are identical, their RMs have the same number of states
 
-        # The observation space is a dictionary including the env features and a one-hot representation of the states in the reward machines
-        # self.observation_dict = spaces.Dict({
-        #                                     'features': spaces.Dict({
-        #                                         'primary_agent': spaces.Dict({
-        #                                             'observation': env.observation_space(self.env.PRIMARY_AGENT_ID),
-        #                                             'action_mask': spaces.MultiBinary(4)
-        #                                             }),
-        #                                         'second_agent': spaces.Dict({
-        #                                             'observation': env.observation_space(self.env.SECOND_AGENT_ID),
-        #                                             'action_mask': spaces.MultiBinary(4)
-        #                                             })
-        #                                                             }),
-        #                                     'rm-state-agent-1': spaces.Box(low=0, high=1, shape=(self.num_rm_states,), dtype=np.uint8),
-        #                                     'rm-state-agent-2': spaces.Box(low=0, high=1, shape=(self.num_rm_states,), dtype=np.uint8)})
         self.observation_dict = spaces.Dict({
                                             'features': spaces.Dict({
                                                 'primary_agent': spaces.Dict({
@@ -73,6 +59,7 @@ class RewardMachineEnv(BaseParallelWrapper):
                 self.reward_machine_state_features[(agent_id, rm_state_id)] = u_features
         # for terminal RM states, we give as features an array of zeros, same for both RMs
         self.reward_machine_done_features = np.zeros(self.num_rm_states)
+        self.crm_params = {}
 
     @property
     def _primary_agent_rm(self):
@@ -93,7 +80,7 @@ class RewardMachineEnv(BaseParallelWrapper):
         reward_machines_observation = {}
 
         for agent_id, _ in self.id_to_reward_machine.items():
-            reward_machines_observation[agent_id] = self.get_observation(agent_id, reward_machine_dones[agent_id])
+            reward_machines_observation[agent_id] = self.get_observation(self.observation, agent_id, reward_machine_dones[agent_id])
 
         return reward_machines_observation
     
@@ -104,65 +91,38 @@ class RewardMachineEnv(BaseParallelWrapper):
 
         # getting the output of the detectors
         true_propositions = self.env._get_events()
-        self.crm_params = {}
 
         # init reward_machine_rewards, reward_machine_dones
         reward_machine_rewards = {agent_id: 0 for agent_id, _ in self.id_to_reward_machine.items()}
         reward_machine_dones = {agent_id: False for agent_id, _ in self.id_to_reward_machine.items()}
 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
-            # saving information for generating counterfactual experiences
-            self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, env_done, true_propositions, info
             # update RMs state
             self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
-                                                                                                                                  true_propositions,
-                                                                                                                                  info)
-        
+                                                                                                                                  true_propositions)
+            
+            # saving information for generating counterfactual experiences
+            self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+            
         self.observation = next_observation
         reward_machine_observations = {}    
         done = reward_machine_dones 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
-            reward_machine_observations[agent_id] = self.get_observation(agent_id, done[agent_id])
+            reward_machine_observations[agent_id] = self.get_observation(next_observation, agent_id, done[agent_id])
         
         return reward_machine_observations, reward_machine_rewards, done, info
     
-
-    # def get_observation(self, next_observation, rm_state_ids, reward_machine_dones):
-
-    #     reward_machine_features = {}
-
-    #     print(f'reward_machine_dones {reward_machine_dones}')
-    #     print(f'rm_state_ids {rm_state_ids}')
-
-    #     for agent_id, _ in self.id_to_reward_machine.items():
-
-    #         if reward_machine_dones[agent_id]:
-    #             reward_machine_features[agent_id] = self.reward_machine_done_features 
-    #         else:
-    #             reward_machine_features[agent_id] = self.reward_machine_state_features[(agent_id, rm_state_ids[agent_id])]
-
-    #     reward_machine_observations = {'features': next_observation, 
-    #                                    'rm-state-agent-1': reward_machine_features[self.env.PRIMARY_AGENT_ID],
-    #                                    'rm-state-agent-2': reward_machine_features[self.env.SECOND_AGENT_ID]}
-        
-    #     return spaces.flatten(self.observation_dict, reward_machine_observations)
     
     # add RM state to the observation
-    def get_observation(self, agent_id, reward_machine_done):
-
-        reward_machine_features = {}
-
-        # print(f'agent_id {agent_id}')
-        # print(f'reward_machine_done {reward_machine_done}')
-        # print(f'rm_state_ids {self.current_rm_state_ids[agent_id]}')
+    def get_observation(self, observation, agent_id, reward_machine_done):
 
         if reward_machine_done:
-            reward_machine_features[agent_id] = self.reward_machine_done_features 
+            reward_machine_features = self.reward_machine_done_features 
         else:
-            reward_machine_features[agent_id] = self.reward_machine_state_features[(agent_id, self.current_rm_state_ids[agent_id])]
+            reward_machine_features = self.reward_machine_state_features[(agent_id, self.current_rm_state_ids[agent_id])]
 
-        reward_machine_observations = {'features': self.observation, 
-                                       'rm-state': reward_machine_features[agent_id]}
+        reward_machine_observations = {'features': observation, 
+                                       'rm-state': reward_machine_features}
         
         return spaces.flatten(self.observation_dict, reward_machine_observations)
     
