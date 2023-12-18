@@ -34,7 +34,6 @@ class RewardMachineWrapper(BaseParallelWrapper):
 
     def step(self, actions):
         # TODO: add RMs and RM states before executing the action
-        id_to_reward_machine = self.env.id_to_reward_machine
         # reward_machines = list(id_to_reward_machine.values())
         # current_rm_state_ids = self.env.current_rm_state_ids
         # executing the action in the environment
@@ -48,10 +47,11 @@ class RewardMachineWrapper(BaseParallelWrapper):
         # example of self.crm_params[agent_id]
         # self.crm_params[agent_id] = self.observations, actions[agent_id], next_observation, env_done, true_propositions
         if self.add_crm:
-            for agent_id, agent_rm in id_to_reward_machine.items():
+            for agent_id, agent_rm in self.env.id_to_reward_machine.items():
                 # print(f"CRM PARAMS for {agent_id}: {self.env.crm_params[agent_id]}")
 
                 crm_experience = self._get_crm_experience(agent_id, agent_rm, *self.env.crm_params[agent_id])
+                # print(f"crm_experience: {crm_experience}")
                 info[agent_id]["crm-experience"] = crm_experience
 
         # print(f'INFO: {info}\n')
@@ -63,12 +63,12 @@ class RewardMachineWrapper(BaseParallelWrapper):
                             observation, action, next_observation, 
                             done,true_propositions):
         
-        reward_machine_observation = self.env.get_observation(observation, agent_id, done)
+        reward_machine_observation = self.env.get_observation(observation, rm_state_id, agent_id, done)
         # print(f'RM OBSERVATION: {reward_machine_observation}')
         next_rm_state_id, reward_machine_reward, reward_machine_done  = reward_machine.step(rm_state_id, true_propositions)
         # self.env.observation = next_observation
         done = reward_machine_done or done
-        next_reward_machine_observation = self.env.get_observation(next_observation, agent_id, done)
+        next_reward_machine_observation = self.env.get_observation(next_observation, rm_state_id, agent_id, done)
         # print(f'NEXT RM OBSERVATION: {next_reward_machine_observation}')
         # print(np.array_equal(reward_machine_observation,next_reward_machine_observation))
         return (reward_machine_observation, action, reward_machine_reward, next_reward_machine_observation, done), next_rm_state_id
@@ -81,11 +81,19 @@ class RewardMachineWrapper(BaseParallelWrapper):
         """
         reachable_states, experiences = set(), []
         valid_states = self.valid_states[agent_id]
+        
 
         for rm_state_id in reward_machine.get_states():
             experience, next_rm_state = self._get_rm_experience(agent_id, reward_machine, rm_state_id, 
                                                                 observation, action, next_observation, 
                                                                 done, true_propositions)
+            # print(f"Experience: {rm_state_id}")
+            # print(f"Observations: {list(experience[0])}")
+            # print(f"Action: {experience[1]}")
+            # print(f"Reward: {experience[2]}")
+            # print(f"Next State: {list(experience[3])}")
+            # print(f"Done: {experience[4]}")
+                    
             reachable_states.add((reward_machine, next_rm_state))
             if valid_states is None or (reward_machine, next_rm_state) in valid_states:
                 experiences.append(experience)
