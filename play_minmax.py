@@ -98,4 +98,4 @@ if __name__ == '__main__':
     map_number=3
     reward_machine_files = rm_constants.MAP_3_RMS
     
-    main(f'logs/training_log_minmax_{map_number}.log', use_crm, map_number, reward_machine_files)
+    main(f'logs/training_log_minmax_{map_number}_v2.log', use_crm, map_number, reward_machine_files)

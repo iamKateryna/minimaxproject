@@ -4,3 +4,8 @@ __pycache__
 logs/
 plots/
 archive/
+
+scripts.py
+run.py
+play.py
+utils.py
