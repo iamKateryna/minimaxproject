@@ -10,7 +10,7 @@ class RewardMachine:
         self.u0 = None       # initial state
         self.delta_u    = {} # state-transition function
         self.delta_r    = {} # reward-transition function
-        self.terminal_u = 4  # All terminal states are sent to the same terminal state with id *-1*
+        self.terminal_u = 2  # All terminal states are sent to the same terminal state with id *-1*
         self._load_reward_machine(file)
         self.known_transitions = {} # Auxiliary variable to speed up computation of the next RM state
 
@@ -63,8 +63,10 @@ class RewardMachine:
             dnf_formulas = self.delta_r[u][next_u].keys()
 
             for formula in dnf_formulas:
+                # print(f"true_propositions -> {true_propositions}, formula -> {formula}, dnf -> {evaluate_dnf(formula, true_propositions)}")
                 if evaluate_dnf(formula, true_propositions):
                     reward += self.delta_r[u][next_u][formula].get_reward()
+                    # print(f"reward -> {reward}")
             # print(f"u-> {u}")
             # print(f"u-> {next_u}")
             # print(f"Delta r-> {self.delta_r}")
