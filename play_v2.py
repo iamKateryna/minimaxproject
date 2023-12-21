@@ -123,8 +123,8 @@ if __name__ == '__main__':
         algorithm = 'qlearning'
     
     map_number = 2
-    reward_machine_files = rm_constants.MAP_2_IGNORE_OPPONENTS_STATE
+    reward_machine_files = rm_constants.MAP_2_RMS_NOT_0_SUM
 
     filename = f'logs/{map_number}_{algorithm}_ignore_{timestamp}.log'
 
-    main(filename, q_init, learning_rate, discount_factor,use_crm, map_number, reward_machine_files, total_timesteps=10000, max_episode_length=1000, print_freq = 1000)
+    main(filename, q_init, learning_rate, discount_factor,use_crm, map_number, reward_machine_files, total_timesteps=10000000, max_episode_length=1000, print_freq = 100000)

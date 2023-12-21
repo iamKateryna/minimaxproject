@@ -1,5 +1,8 @@
-MAP_2_RMS = ['reward_machines/officeWorld/reward_machines_m2_a1.txt', 'reward_machines/officeWorld/reward_machines_m2_a2.txt']
-MAP_2_RMS_DECORATIONS = ['reward_machines/officeWorld/reward_machines_m2_dec_reward_a1.txt', 'reward_machines/officeWorld/reward_machines_m2_dec_reward_a2.txt']
-MAP_2_RMS_NOT_0_SUM = ['reward_machines/officeWorld/rm_m2_not_zero_sum_a1.txt', 'reward_machines/officeWorld/rm_m2_not_zero_sum_a2.txt']
-MAP_2_IGNORE_OPPONENTS_STATE = ['reward_machines/officeWorld/rm_m2_ignore_a1.txt', 'reward_machines/officeWorld/rm_m2_ignore_a2.txt']
-MAP_3_RMS = ['reward_machines/officeWorld/reward_machines_m3_a1.txt', 'reward_machines/officeWorld/reward_machines_m3_a2.txt']
+RM_PATH_PREFIX = "reward_machines/officeWorld/"
+
+# RM files paths
+MAP_3_RM = [f"{RM_PATH_PREFIX}m3_a1.txt", f"{RM_PATH_PREFIX}m3_a2.txt"]
+MAP_2_RM_ORIGINAL_REWARDS = [f"{RM_PATH_PREFIX}m2_original_rewards_a1.txt", f"{RM_PATH_PREFIX}m2_original_rewards_a2.txt"]
+MAP_2_RM_HIGHER_PENALTY_DECORATION = [f"{RM_PATH_PREFIX}m2_higher_penalty_decoration_a1.txt", f"{RM_PATH_PREFIX}m2_higher_penalty_decoration_a2.txt"]
+MAP_2_RM_HIGHER_PENALTY_LOSS = [f"{RM_PATH_PREFIX}m2_higher_penalty_loss_a1.txt", f"{RM_PATH_PREFIX}m2_higher_penalty_loss_a2.txt"]
+MAP_2_RM_NO_PENALTY_DECORATION = [f"{RM_PATH_PREFIX}m2_no_penalty_decoration_a1.txt", f"{RM_PATH_PREFIX}m2_no_penalty_decoration_a2.txt"]

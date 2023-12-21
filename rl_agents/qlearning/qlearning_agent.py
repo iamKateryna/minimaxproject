@@ -12,16 +12,7 @@ class QLearningAgent:
         self.action_space = action_space
     
     def get_qvalue(self, state, action):
-        # state_q = self.q_table.get(state)
-
         return self.q_table[state][action]
-
-        # if state_q:
-        #     return state_q.get(action, self.q_init)
-
-        # return self.q_init
-        
-        # return self.q_table.get(state.get(action)), self.q_init)
 
 
     def get_value(self, state):
@@ -82,17 +73,17 @@ class QLearningAgent:
                 self.init_q_values(next_state)
 
             # check if state is in q_table (important for countterfactual experiences)
-            # if state not in self.q_table:
-            #     self.init_q_values(state)
-
-            q_value = self.get_qvalue(state, action) # q_value of our action action at state state
+            if state not in self.q_table:
+                self.init_q_values(state)
 
             if done:
                 value = reward
             else: 
                 # print(f"Value -> {value}")
                 value = reward + self.gamma * self.get_value(next_state)
-            
-            # print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
+                
+            q_value = self.get_qvalue(state, action) # q_value of our action action at state state
+
+            print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
             self.q_table[state][action] += self.lr * (value - q_value)
             # print(f"self.q_table[state] -> {self.q_table[state]}")

@@ -10,7 +10,7 @@ class RewardMachine:
         self.u0 = None       # initial state
         self.delta_u    = {} # state-transition function
         self.delta_r    = {} # reward-transition function
-        self.terminal_u = 2  # All terminal states are sent to the same terminal state with id *-1*
+        self.terminal_u = 4  # All terminal states are sent to the same terminal state with id *-1*
         self._load_reward_machine(file)
         self.known_transitions = {} # Auxiliary variable to speed up computation of the next RM state
 
