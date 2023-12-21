@@ -34,7 +34,6 @@ class RewardMachineWrapper(BaseParallelWrapper):
 
     def step(self, actions, episode = None):
         # TODO: add RMs and RM states before executing the action
-        id_to_reward_machine = self.env.id_to_reward_machine
         # reward_machines = list(id_to_reward_machine.values())
         # current_rm_state_ids = self.env.current_rm_state_ids
         # executing the action in the environment
@@ -48,10 +47,10 @@ class RewardMachineWrapper(BaseParallelWrapper):
         # example of self.crm_params[agent_id]
         # self.observations, actions[agent_id], next_observation, env_done, true_propositions
         if self.add_crm:
-            for agent_id, agent_rm in id_to_reward_machine.items():
+            for agent_id in self.env.id_to_reward_machine:
                 # print(f"CRM PARAMS for {agent_id}: {self.env.crm_params[agent_id]}")
 
-                crm_experience = self._get_crm_experience(agent_id, agent_rm, *self.env.crm_params[agent_id])
+                crm_experience = self._get_crm_experience(agent_id, *self.env.crm_params[agent_id])
                 info[agent_id]["crm-experience"] = crm_experience
 
         # print(f'INFO: {info}\n')
@@ -70,13 +69,14 @@ class RewardMachineWrapper(BaseParallelWrapper):
         return (reward_machine_observation, action, reward_machine_reward, next_reward_machine_observation, done), next_rm_state_id
     
 
-    def _get_crm_experience(self, agent_id, reward_machine, observation, action, next_observation, done, true_propositions):
+    def _get_crm_experience(self, agent_id, observation, action, next_observation, done, true_propositions):
         """
         Returns a list of counterfactual experiences generated per each RM state.
         Format: [..., (observation, action, reward, next_observation, done), ...]
         """
         reachable_states, experiences = set(), []
         agents_valid_state = self.valid_states[agent_id]
+        reward_machine = self.env.id_to_reward_machine[agent_id]
 
         for rm_state_id in reward_machine.get_states():
             # print(f"get_crm_experience rm_state_id -> {rm_state_id}, true_propositions -> {true_propositions}")
@@ -85,11 +85,11 @@ class RewardMachineWrapper(BaseParallelWrapper):
                                                                 done, true_propositions)
             reachable_states.add((reward_machine, next_rm_state))
 
-            print(f"Current rm state -> true_propositions -> new rm state: {rm_state_id} -> {true_propositions} -> {next_rm_state} ")
+            # print(f"Current rm state -> true_propositions -> new rm state: {rm_state_id} -> {true_propositions} -> {next_rm_state} ")
 
             # print(f"Adding crm to experience -> {agents_valid_state is None or (reward_machine, next_rm_state) in agents_valid_state}")
 
-            if agents_valid_state is None or (reward_machine, next_rm_state) in agents_valid_state:
+            if agents_valid_state is None or (reward_machine, rm_state_id) in agents_valid_state:
                 experiences.append(experience)
         
         # print(f"experience -> {experiences}")

@@ -31,7 +31,8 @@ class RewardMachineEnv(BaseParallelWrapper):
         }
 
         self.reward_machines = list(self.id_to_reward_machine.values())
-        self.num_rm_states = len(self.reward_machines[0].get_states()) *2 # agents are identical, their RMs have the same number of states
+        # self.num_rm_states = len(self.reward_machines[0].get_states()) * 2 # agents are identical, their RMs have the same number of states
+        self.num_rm_states = len(self.reward_machines[0].get_states())
 
         self.observation_dict = spaces.Dict({
                                             'features': spaces.Dict({
@@ -51,13 +52,13 @@ class RewardMachineEnv(BaseParallelWrapper):
         self.observation_space = spaces.Box(low=space_low, high=space_high, shape=(flatdim,), dtype=np.float32)
 
         # Computing one-hot encodings for the non-terminal RM states
-        self.reward_machine_state_features = {}
+        self.reward_machine_state_features = {agent_id: {} for agent_id in self.id_to_reward_machine}
 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
             for rm_state_id in agent_rm.get_states():
                 u_features = np.zeros(self.num_rm_states)
-                u_features[len(self.reward_machine_state_features)] = 1
-                self.reward_machine_state_features[(agent_id, rm_state_id)] = u_features
+                u_features[len(self.reward_machine_state_features[agent_id])] = 1
+                self.reward_machine_state_features[agent_id][rm_state_id] = u_features
         # for terminal RM states, we give as features an array of zeros, same for both RMs
         self.reward_machine_done_features = np.zeros(self.num_rm_states)
         self.crm_params = {}
@@ -125,7 +126,7 @@ class RewardMachineEnv(BaseParallelWrapper):
             reward_machine_features = self.reward_machine_done_features 
         else:
             # reward_machine_features = self.reward_machine_state_features[(agent_id, self.current_rm_state_ids[agent_id])]
-            reward_machine_features = self.reward_machine_state_features[(agent_id, rm_state_id)]
+            reward_machine_features = self.reward_machine_state_features[agent_id][rm_state_id]
 
         reward_machine_observations = {'features': observation, 
                                        'rm-state': reward_machine_features}
