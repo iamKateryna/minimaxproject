@@ -32,8 +32,10 @@ class RewardMachineWrapper(BaseParallelWrapper):
         return self.env.reset()
     
 
+
     def step(self, actions, agent_type, episode = None):
         # print(f"WRAPPER: actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
+
 
         # executing the action in the environment
         # true_propositions and rm_state are for progress tracking purposes
@@ -49,7 +51,9 @@ class RewardMachineWrapper(BaseParallelWrapper):
 
         if self.add_crm:
 
+
             for agent_id in self.env.id_to_reward_machine:
+
                 # print(f"CRM PARAMS for {agent_id}: {self.env.crm_params[agent_id]}")
                 if agent_type == 'qlearning':
 
@@ -72,10 +76,14 @@ class RewardMachineWrapper(BaseParallelWrapper):
                             observation, action, next_observation, 
                             done,true_propositions):
         
+
         reward_machine_observation = self.env.get_observation(observation, agent_id, rm_state_id, done)
+
         next_rm_state_id, reward_machine_reward, reward_machine_done  = reward_machine.step(rm_state_id, true_propositions)
         done = reward_machine_done or done
+
         next_reward_machine_observation = self.env.get_observation(next_observation, agent_id, next_rm_state_id, done)
+
         return (reward_machine_observation, action, reward_machine_reward, next_reward_machine_observation, done), next_rm_state_id
     
 
@@ -96,14 +104,23 @@ class RewardMachineWrapper(BaseParallelWrapper):
         Format: [..., (observation, action, reward, next_observation, done), ...]
         """
         reachable_states, experiences = set(), []
+
         agents_valid_state = self.valid_states[agent_id]
         reward_machine = self.env.id_to_reward_machine[agent_id]
+
 
         for rm_state_id in reward_machine.get_states():
             # print(f"get_crm_experience rm_state_id -> {rm_state_id}, true_propositions -> {true_propositions}")
             experience, next_rm_state = self._get_rm_experience(agent_id, reward_machine, rm_state_id, 
                                                                 observation, action, next_observation, 
                                                                 done, true_propositions)
+            # print(f"Experience: {rm_state_id}")
+            # print(f"Observations: {list(experience[0])}")
+            # print(f"Action: {experience[1]}")
+            # print(f"Reward: {experience[2]}")
+            # print(f"Next State: {list(experience[3])}")
+            # print(f"Done: {experience[4]}")
+                    
             reachable_states.add((reward_machine, next_rm_state))
 
             # print(f"Current rm state -> true_propositions -> new rm state: {rm_state_id} -> {true_propositions} -> {next_rm_state} ")
