@@ -63,13 +63,9 @@ class RewardMachine:
             dnf_formulas = self.delta_r[u][next_u].keys()
 
             for formula in dnf_formulas:
-                # print(f"true_propositions -> {true_propositions}, formula -> {formula}, dnf -> {evaluate_dnf(formula, true_propositions)}")
                 if evaluate_dnf(formula, true_propositions):
                     reward += self.delta_r[u][next_u][formula].get_reward()
-                    # print(f"reward -> {reward}")
-            # print(f"u-> {u}")
-            # print(f"u-> {next_u}")
-            # print(f"Delta r-> {self.delta_r}")
+
         # Returning final reward
         return reward
     

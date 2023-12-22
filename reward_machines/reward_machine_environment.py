@@ -87,8 +87,8 @@ class RewardMachineEnv(BaseParallelWrapper):
         return reward_machines_observation
     
 
-    def step(self, actions, episode = None):
-
+    def step(self, actions, agent_type, episode = None):
+        print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
         next_observation, _, env_done, _, info = self.env.step(actions)
 
         # getting the output of the detectors
@@ -100,15 +100,36 @@ class RewardMachineEnv(BaseParallelWrapper):
         # print(f'RM STATE IDs {self.current_rm_state_ids}')
         # print(f"episode -> {episode}")
 
-        for agent_id, agent_rm in self.id_to_reward_machine.items():
-            # update RMs state
-            self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
-                                                                                                                                  true_propositions)
-            # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
-            
-            # saving information for generating counterfactual experiences
-            self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
-            
+        if agent_type == 'qlearning':
+
+            for agent_id, agent_rm in self.id_to_reward_machine.items():
+                # update RMs state
+                self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
+                                                                                                                                    true_propositions)
+                # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
+                
+                # saving information for generating counterfactual experiences
+                self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+
+        elif agent_type == 'minmax':
+
+            for agent_id, agent_rm in self.id_to_reward_machine.items():
+
+                # define other_agent_id to keep track of other agent actions
+                other_agent_id = "primary_agent" if "second_agent" == agent_id else "second_agent"
+
+                # update RMs state
+                self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
+                                                                                                                                    true_propositions)
+                # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
+                
+                # saving information for generating counterfactual experiences
+                self.crm_params[agent_id] = self.observation, actions[agent_id], actions[other_agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+
+        else: 
+            raise NotImplementedError(f"CRM updates for {agent_type} are not implemented, available options -> 'minmax' or 'qlearning' ")
+
+                
         # print(f'RM STATE IDs {self.current_rm_state_ids}')
         self.observation = next_observation
         reward_machine_observations = {}    
@@ -116,7 +137,8 @@ class RewardMachineEnv(BaseParallelWrapper):
         for agent_id, agent_rm in self.id_to_reward_machine.items():
             reward_machine_observations[agent_id] = self.get_observation(next_observation, agent_id,  self.current_rm_state_ids[agent_id],  done[agent_id])
         
-        return reward_machine_observations, reward_machine_rewards, done, info
+        # return true_propositions and self.current_rm_state_ids for tracking progress
+        return reward_machine_observations, reward_machine_rewards, done, info, true_propositions, self.current_rm_state_ids
     
     
     # add RM state to the observation

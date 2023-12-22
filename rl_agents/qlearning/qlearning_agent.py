@@ -33,15 +33,12 @@ class QLearningAgent:
             
         return max_
 
-    # returns best_action for state state
-
     def get_policy(self, state):
         q_values = [self.get_qvalue(state, action) for action in range(self.action_space.n)] # array of q_values per action at state state
         maxQ = max(q_values)
 
-        # best_actions = [action for action in range(self.action_space.n) if q_values[action] == maxQ]
         best_actions = [action for action in range(self.action_space.n) if math.isclose(q_values[action],maxQ, rel_tol=1e-8)]
-        # print(f"All q-values: {[q_values[action] for action in range(self.action_space.n)]} ")
+        print(f"All q-values: {[q_values[action] for action in range(self.action_space.n)]} ")
         # print(f"best_actions -> {best_actions}, maxQ -> {maxQ}")
         
         # for stochastic policy
@@ -84,6 +81,6 @@ class QLearningAgent:
                 
             q_value = self.get_qvalue(state, action) # q_value of our action action at state state
 
-            print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
+            # print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
             self.q_table[state][action] += self.lr * (value - q_value)
             # print(f"self.q_table[state] -> {self.q_table[state]}")

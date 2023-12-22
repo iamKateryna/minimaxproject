@@ -2,7 +2,7 @@ import logging
 from tqdm import tqdm
 from datetime import datetime
 
-from rl_agents.qlearning.qlearning_agent import QLearningAgent
+from rl_agents.minmax_qlearning.minmax_agent import MinMaxQLearningAgent
 from envs.officeWorld.office_world_env import OfficeWorldEnv
 from reward_machines.reward_machine_environment import RewardMachineEnv
 from reward_machines.reward_machine_wrapper import RewardMachineWrapper
@@ -25,7 +25,7 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_number, 
 
     action_space = office_env.primary_agent.action_space
     
-    learning_agents = {agent_id: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor) 
+    learning_agents = {agent_id: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor) 
               for agent_id in office_env.possible_agents}
 
     logging.info(f'USE CRM: {use_crm}, MAP: {map_number}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}')
@@ -70,21 +70,21 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_number, 
 
             # print(f"actions_to_execute -> {actions_to_execute}")
 
-            next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute,  agent_type = 'qlearning', episode = num_episodes)
+            next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute, agent_type = 'minmax', episode = num_episodes)
             done = any(done.values())
 
             # Updating the q-values
             # print(" --- UPDARING Q-VALUES --- ")
             for agent_id in office_env.all_agents:
 
-
+                other_agent_id = office_env.all_agents[0] if office_env.all_agents[1] == agent_id else office_env.all_agents[1]
 
                 if use_crm:
                     experiences = []
-                    for _state, _action, _reward, _next_state, _done in info[agent_id]["crm-experience"]:
-                        experiences.append((tuple(_state), _action, _reward, tuple(_next_state), _done))
+                    for _state, _action, _other_agent_action, _reward, _next_state, _done in info[agent_id]["crm-experience"]:
+                        experiences.append((tuple(_state), _action, _other_agent_action, _reward, tuple(_next_state), _done))
                 else:
-                    experiences = [(state[agent_id], actions_to_execute[agent_id], rewards[agent_id], tuple(next_state[agent_id]), done)]
+                    experiences = [(state[agent_id], actions_to_execute[agent_id], actions_to_execute[other_agent_id], rewards[agent_id], tuple(next_state[agent_id]), done)]
                 
                 learning_agents[agent_id].learn(experiences)
 
@@ -106,7 +106,7 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_number, 
                 wins_total[agent1] += 1
             if 'g2' in true_propositions and rm_state[agent2] == 4:
                 wins_total[agent2] += 1
-            
+
             if print_freq and num_steps % print_freq == 0:
                 logging.info(f"True props -> {true_propositions}")
                 print(f"Steps: {num_steps}, Episodes: {num_episodes}, Reward: {rewards}, Total reward: {reward_total}, Total wins: {wins_total}, Broken decorations: {broken_decorations_score}")
@@ -131,6 +131,6 @@ if __name__ == '__main__':
     map_number = rm_list[0]
     reward_machine_files = rm_list[1:]
 
-    filename = f'logs/{map_number}_higher_penalty_loss_{algorithm}.log'
+    filename = f'logs/{map_number}_higher_penalty_loss_minmax_{algorithm}.log'
 
     main(filename, q_init, learning_rate, discount_factor,use_crm, map_number, reward_machine_files, total_timesteps=1000000, max_episode_length=1000, print_freq = 100000)

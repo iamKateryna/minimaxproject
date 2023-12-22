@@ -38,20 +38,24 @@ class MinMaxQLearningAgent:
         best_action = None
         best_action_value = -float('inf')
 
+        all_q_values = []
+
         for action in range(self.own_action_space.n):
             max_value_for_action = -float('inf')
 
             for opponent_action in range(self.opponent_action_space.n):
                 q_value = self.get_qvalue(state, action, opponent_action)
+                all_q_values.append(q_value)
 
                 if q_value > max_value_for_action:
                     max_value_for_action = q_value
+
 
             if max_value_for_action > best_action_value:
                 best_action_value = max_value_for_action
                 best_action = action
 
-        # print(f"best_action -> {best_action}, maxQ -> {max_value_for_action}")
+        print(f"All q-values: {all_q_values} ")
         return best_action
 
 
