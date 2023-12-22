@@ -5,13 +5,8 @@ __pycache__
 logs/
 plots/
 archive/
-reward_machines/officeWorld/
 
-# temp, do not commit
-utils.py
+scripts.py
+run.py
 play.py
-play_minmax.py
-defaults.py
-human_mode.py
-
-.gitignore
+utils.py

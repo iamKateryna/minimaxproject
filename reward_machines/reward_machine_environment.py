@@ -1,5 +1,6 @@
 from pettingzoo.utils import BaseParallelWrapper
 from .reward_machine import RewardMachine
+from envs.officeWorld.value_iteration import value_iteration
 
 from gymnasium import spaces
 import numpy as np
@@ -30,7 +31,8 @@ class RewardMachineEnv(BaseParallelWrapper):
         }
 
         self.reward_machines = list(self.id_to_reward_machine.values())
-        self.num_rm_states = len(self.reward_machines[0].get_states()) *2 # agents are identical, their RMs have the same number of states
+        # self.num_rm_states = len(self.reward_machines[0].get_states()) * 2 # agents are identical, their RMs have the same number of states
+        self.num_rm_states = len(self.reward_machines[0].get_states())
 
         self.observation_dict = spaces.Dict({
                                             'features': spaces.Dict({
@@ -50,13 +52,13 @@ class RewardMachineEnv(BaseParallelWrapper):
         self.observation_space = spaces.Box(low=space_low, high=space_high, shape=(flatdim,), dtype=np.float32)
 
         # Computing one-hot encodings for the non-terminal RM states
-        self.reward_machine_state_features = {}
+        self.reward_machine_state_features = {agent_id: {} for agent_id in self.id_to_reward_machine}
 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
             for rm_state_id in agent_rm.get_states():
                 u_features = np.zeros(self.num_rm_states)
-                u_features[len(self.reward_machine_state_features)] = 1
-                self.reward_machine_state_features[(agent_id, rm_state_id)] = u_features
+                u_features[len(self.reward_machine_state_features[agent_id])] = 1
+                self.reward_machine_state_features[agent_id][rm_state_id] = u_features
         # for terminal RM states, we give as features an array of zeros, same for both RMs
         self.reward_machine_done_features = np.zeros(self.num_rm_states)
         self.crm_params = {}
@@ -80,13 +82,15 @@ class RewardMachineEnv(BaseParallelWrapper):
         reward_machines_observation = {}
 
         for agent_id, _ in self.id_to_reward_machine.items():
-            reward_machines_observation[agent_id] = self.get_observation(self.observation, self.current_rm_state_ids[agent_id], agent_id, reward_machine_dones[agent_id])
+
+            reward_machines_observation[agent_id] = self.get_observation(self.observation, agent_id,  self.current_rm_state_ids[agent_id], reward_machine_dones[agent_id])
+
 
         return reward_machines_observation
     
 
-    def step(self, actions):
-
+    def step(self, actions, agent_type, episode = None):
+        print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
         next_observation, _, env_done, _, info = self.env.step(actions)
 
         # getting the output of the detectors
@@ -95,31 +99,63 @@ class RewardMachineEnv(BaseParallelWrapper):
         # init reward_machine_rewards, reward_machine_dones
         reward_machine_rewards = {agent_id: 0 for agent_id, _ in self.id_to_reward_machine.items()}
         reward_machine_dones = {agent_id: False for agent_id, _ in self.id_to_reward_machine.items()}
+        # print(f'RM STATE IDs {self.current_rm_state_ids}')
+        # print(f"episode -> {episode}")
 
-        for agent_id, agent_rm in self.id_to_reward_machine.items():
-            # update RMs state
-            self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
-                                                                                                                                  true_propositions)
-            
-            # saving information for generating counterfactual experiences
-            self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
-            
+        if agent_type == 'qlearning':
+
+            for agent_id, agent_rm in self.id_to_reward_machine.items():
+                # update RMs state
+                self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
+                                                                                                                                    true_propositions)
+                # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
+                
+                # saving information for generating counterfactual experiences
+                self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+
+        elif agent_type == 'minmax':
+
+            for agent_id, agent_rm in self.id_to_reward_machine.items():
+
+                # define other_agent_id to keep track of other agent actions
+                other_agent_id = "primary_agent" if "second_agent" == agent_id else "second_agent"
+
+                # update RMs state
+                self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
+                                                                                                                                    true_propositions)
+                # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
+                
+                # saving information for generating counterfactual experiences
+                self.crm_params[agent_id] = self.observation, actions[agent_id], actions[other_agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+
+        else: 
+            raise NotImplementedError(f"CRM updates for {agent_type} are not implemented, available options -> 'minmax' or 'qlearning' ")
+
+                
+        # print(f'RM STATE IDs {self.current_rm_state_ids}')
         self.observation = next_observation
         reward_machine_observations = {}    
         done = reward_machine_dones 
         for agent_id, agent_rm in self.id_to_reward_machine.items():
-            reward_machine_observations[agent_id] = self.get_observation(next_observation, self.current_rm_state_ids[agent_id], agent_id, done[agent_id])
-        
-        return reward_machine_observations, reward_machine_rewards, done, info
+
+            reward_machine_observations[agent_id] = self.get_observation(next_observation, agent_id,  self.current_rm_state_ids[agent_id],  done[agent_id])
+
+        # return true_propositions and self.current_rm_state_ids for tracking progress
+        return reward_machine_observations, reward_machine_rewards, done, info, true_propositions, self.current_rm_state_ids
     
     
     # add RM state to the observation
-    def get_observation(self, observation, rm_state_id, agent_id, reward_machine_done):
+
+    def get_observation(self, observation, agent_id, rm_state_id, reward_machine_done):
+
 
         if reward_machine_done:
             reward_machine_features = self.reward_machine_done_features 
         else:
-            reward_machine_features = self.reward_machine_state_features[(agent_id, rm_state_id)]
+
+            # reward_machine_features = self.reward_machine_state_features[(agent_id, self.current_rm_state_ids[agent_id])]
+            reward_machine_features = self.reward_machine_state_features[agent_id][rm_state_id]
+
 
         reward_machine_observations = {'features': observation, 
                                        'rm-state': reward_machine_features}
@@ -195,4 +231,44 @@ class RewardMachineEnv(BaseParallelWrapper):
                         break
         else:
             raise NotImplementedError
+        
+    # def test_optimal_policies(self, num_episodes, epsilon, gamma):
+    #     """
+    #     This code computes optimal policies for each reward machine and evaluates them using epsilon-greedy exploration
+
+    #     PARAMS
+    #     ----------
+    #     num_episodes(int): Number of evaluation episodes
+    #     epsilon(float):    Epsilon constant for exploring the environment
+    #     gamma(float):      Discount factor
+
+    #     RETURNS
+    #     ----------
+    #     List with the optimal average-reward-per-step per reward machine
+    #     """
+    #     S,A,L,T = self.env.get_model()
+    #     print("\nComputing optimal policies... ", end='', flush=True)
+    #     optimal_policies = [value_iteration(S,A,L,T,reward_machine,gamma) for reward_machine in self.reward_machines]
+    #     print("Done!")
+    #     optimal_ARPS = [[] for _ in range(len(optimal_policies))]
+    #     print("\nEvaluating optimal policies.")
+    #     for ep in range(num_episodes):
+    #         if ep % 100 == 0 and ep > 0:
+    #             print("%d/%d"%(ep,num_episodes))
+    #         self.reset()
+    #         s = tuple(self.obs)
+    #         u = self.current_u_id
+    #         rm_id = self.current_rm_id
+    #         rewards = []
+    #         done = False
+    #         while not done:
+    #             a = random.choice(A) if random.random() < epsilon else optimal_policies[rm_id][(s,u)]
+    #             _, r, done, _ = self.step(a)
+    #             rewards.append(r)
+    #             s = tuple(self.obs)
+    #             u = self.current_u_id
+    #         optimal_ARPS[rm_id].append(sum(rewards)/len(rewards))
+    #     print("Done!\n")
+
+        return [sum(arps)/len(arps) for arps in optimal_ARPS]
  

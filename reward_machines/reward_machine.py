@@ -65,9 +65,7 @@ class RewardMachine:
             for formula in dnf_formulas:
                 if evaluate_dnf(formula, true_propositions):
                     reward += self.delta_r[u][next_u][formula].get_reward()
-            # print(f"u-> {u}")
-            # print(f"u-> {next_u}")
-            # print(f"Delta r-> {self.delta_r}")
+
         # Returning final reward
         return reward
     
