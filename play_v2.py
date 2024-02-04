@@ -7,13 +7,10 @@ from envs.officeWorld.office_world_env import OfficeWorldEnv
 from reward_machines.reward_machine_environment import RewardMachineEnv
 from reward_machines.reward_machine_wrapper import RewardMachineWrapper
 
-import rm_constants
+from envs.officeWorld.map_collection import MapCollection
+from utils import setup_logger
 
-def setup_logger(filename):
-    # Configure logger
-    logging.basicConfig(filename=filename,  filemode='w', level=logging.INFO,
-                        format='%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info("Started Logging")
+import rm_constants
 
 
 def main(filename, q_init, learning_rate, discount_factor, use_crm, map_number, reward_machine_files, total_timesteps=100000, max_episode_length=1000, print_freq=0):
@@ -30,7 +27,6 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_number, 
 
     logging.info(f'USE CRM: {use_crm}, MAP: {map_number}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}')
     logging.info(f"lr -> {learning_rate}, q_init -> {q_init}, discount_factor -> {discount_factor}")
-    print(f"USE CRM: {use_crm}, MAP: {map_number}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}")
 
     reward_total = {agent_id: 0 for agent_id in office_env.all_agents}
     wins_total = {agent_id: 0 for agent_id in office_env.all_agents}

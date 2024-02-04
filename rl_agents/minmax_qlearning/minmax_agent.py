@@ -55,7 +55,7 @@ class MinMaxQLearningAgent:
                 best_action_value = max_value_for_action
                 best_action = action
 
-        print(f"All q-values: {all_q_values} ")
+        # print(f"All q-values: {all_q_values} ")
         return best_action
 
 
@@ -101,3 +101,6 @@ class MinMaxQLearningAgent:
             # print(f"self.q_table[state][own_action][opponent_action]: {self.q_table[state][own_action][opponent_action]} ")
             
             self.q_table[state][own_action][opponent_action] += self.lr * (value - current_q)
+
+    def name(self):
+        return 'minmaxq'

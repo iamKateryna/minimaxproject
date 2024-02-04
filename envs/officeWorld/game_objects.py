@@ -74,6 +74,22 @@ class PrimaryAgent(Agent):
 
         self.change_position(x, y)
 
+    
+    def get_target_coordinates(self, action_id: int):
+        action = Actions(action_id)
+        x, y = self.coordinates
+
+        if action == Actions.UP:
+            y += 1
+        elif action == Actions.DOWN:
+            y -= 1
+        elif action == Actions.LEFT:
+            x -= 1
+        elif action == Actions.RIGHT:
+            x += 1
+
+        return (x, y)
+
 
 class SecondAgent(Agent):   
     def __init__(self, x: int, y: int):
@@ -93,6 +109,22 @@ class SecondAgent(Agent):
             x += 1
 
         self.change_position(x, y)
+
+
+    def get_target_coordinates(self, action_id: int):
+        action = Actions(action_id)
+        x, y = self.coordinates
+
+        if action == Actions.UP:
+            y += 1
+        elif action == Actions.DOWN:
+            y -= 1
+        elif action == Actions.LEFT:
+            x -= 1
+        elif action == Actions.RIGHT:
+            x += 1
+
+        return (x, y)
 
 
 class Obstacle(Entity):

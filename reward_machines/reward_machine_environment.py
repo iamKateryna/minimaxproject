@@ -90,7 +90,8 @@ class RewardMachineEnv(BaseParallelWrapper):
     
 
     def step(self, actions, agent_type, episode = None):
-        print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
+        if episode%7500 == 0:
+            print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
         next_observation, _, env_done, _, info = self.env.step(actions)
 
         # getting the output of the detectors

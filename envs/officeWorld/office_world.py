@@ -5,6 +5,7 @@ import numpy as np
 from .game_objects import *
 from collections import defaultdict
 import gymnasium.spaces
+from .map_collection import MapCollection
 
 
 class OfficeWorld:
@@ -13,46 +14,9 @@ class OfficeWorld:
                              OfficeWorldObjects.COFFEE,
                              OfficeWorldObjects.OFFICE]
 
-    MAP_1_OBJECTS: dict[tuple[int, int], OfficeWorldObjects] = {
-        (1, 1): OfficeWorldObjects.A,
-        (1, 7): OfficeWorldObjects.B,
-        (10, 7): OfficeWorldObjects.C,
-        (10, 1): OfficeWorldObjects.D,
-        (7, 4): OfficeWorldObjects.MAIL,
-        (8, 2): OfficeWorldObjects.COFFEE, #(10, 0): OfficeWorldObjects.COFFEE
-        (3, 6): OfficeWorldObjects.COFFEE,
-        (4, 4): OfficeWorldObjects.OFFICE,
-        (4, 1): OfficeWorldObjects.PLANT,
-        (7, 1): OfficeWorldObjects.PLANT,
-        (4, 7): OfficeWorldObjects.PLANT,
-        (7, 7): OfficeWorldObjects.PLANT,
-        (1, 4): OfficeWorldObjects.PLANT,
-        (10, 4): OfficeWorldObjects.PLANT,
-    }
-    
-    MAP_2_OBJECTS: dict[tuple[int, int], str] = {
-        (7, 4): OfficeWorldObjects.MAIL,
-        (10, 0): OfficeWorldObjects.COFFEE,
-        (3, 6): OfficeWorldObjects.COFFEE,
-        (4, 4): OfficeWorldObjects.OFFICE,
-        (4, 1): OfficeWorldObjects.PLANT,
-        (7, 1): OfficeWorldObjects.PLANT,
-        (4, 7): OfficeWorldObjects.PLANT,
-        (7, 7): OfficeWorldObjects.PLANT,
-        (1, 4): OfficeWorldObjects.PLANT,
-        (10, 4): OfficeWorldObjects.PLANT,
-    }
 
-    MAP_3_OBJECTS: dict[tuple[int, int], str] = {
-        (7, 4): OfficeWorldObjects.MAIL,
-        (10, 0): OfficeWorldObjects.COFFEE,
-        (3, 6): OfficeWorldObjects.COFFEE,
-        (4, 4): OfficeWorldObjects.OFFICE,
-    }
-    
-
-    def __init__(self, map_height: int = 12, map_width: int = 9, map_number: int = 1):
-        self._objects = self._load_map_objects(map_number)
+    def __init__(self, map_height: int = 12, map_width: int = 9, map_object = MapCollection.MAP_2_OBJECTS):
+        self._objects = map_object
         self._map_height = map_height
         self._map_width = map_width
         self._forbidden_actions = self._load_forbidden_actions()
@@ -76,20 +40,10 @@ class OfficeWorld:
             for location, forbidden_actions in self._forbidden_actions.items()
             for action in forbidden_actions
         }
+    
 
-    def _load_forbidden_actions(self) -> dict[tuple[int, int], set[Actions]]:
-        location_to_forbidden_actions = defaultdict(set)
+    def _add_doors(self, location_to_forbidden_actions) -> dict[tuple[int, int], set[Actions]]:
 
-        for x in range(self._map_height):
-            for y in [0, 3, 6]:
-                location_to_forbidden_actions[(x, y)].add(Actions.DOWN)
-                location_to_forbidden_actions[(x, y + 2)].add(Actions.UP)
-        for y in range(self._map_width):
-            for x in [0, 3, 6, 9]:
-                location_to_forbidden_actions[(x, y)].add(Actions.LEFT)
-                location_to_forbidden_actions[(x + 2, y)].add(Actions.RIGHT)
-
-        # adding 'doors'
         for y in [1, 7]:
             for x in [2, 5, 8]:
                 location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
@@ -104,17 +58,36 @@ class OfficeWorld:
 
         return location_to_forbidden_actions
 
-    def _load_map_objects(self, map_number) -> dict[tuple[int, int], OfficeWorldObjects]:
-        if map_number == 1:
-            objects = self.MAP_1_OBJECTS
-        elif map_number == 2:
-            objects = self.MAP_2_OBJECTS
-        elif map_number == 3:
-            objects = self.MAP_3_OBJECTS
-        else:
-            raise NotImplementedError
 
-        return objects
+    def _load_forbidden_actions(self) -> dict[tuple[int, int], set[Actions]]:
+        location_to_forbidden_actions = defaultdict(set)
+
+        # forbid going through all walls
+        for x in range(self._map_height):
+            for y in range(0, self._map_width, 3):
+                location_to_forbidden_actions[(x, y)].add(Actions.DOWN)
+                location_to_forbidden_actions[(x, y + 2)].add(Actions.UP)
+        for y in range(self._map_width):
+            for x in range(0, self._map_height, 3):
+                location_to_forbidden_actions[(x, y)].add(Actions.LEFT)
+                location_to_forbidden_actions[(x + 2, y)].add(Actions.RIGHT)
+
+        # add 'doors' - map-specific
+        location_to_forbidden_actions = self._add_doors(location_to_forbidden_actions)
+
+        # for y in [1, 7]:
+        #     for x in [2, 5, 8]:
+        #         location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
+        #         location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)
+
+        # for x in [1, 4, 7, 10]:
+        #     location_to_forbidden_actions[(x, 5)].remove(Actions.UP)
+        #     location_to_forbidden_actions[(x, 6)].remove(Actions.DOWN)
+        # for x in [1, 10]:
+        #     location_to_forbidden_actions[(x, 2)].remove(Actions.UP)
+        #     location_to_forbidden_actions[(x, 3)].remove(Actions.DOWN)
+
+        return location_to_forbidden_actions
 
     @property
     def observation_space(self):
