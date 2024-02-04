@@ -131,6 +131,16 @@ class OfficeWorldEnv(ParallelEnv):
             # act
             selected_agent = self.id_to_agent[selected_agent_id]
             selected_agent.act(actions[selected_agent_id])
+        else:
+            # else, regular actions
+            for agent_id, agent in self.id_to_agent.items():
+                agent_action = actions[agent_id]
+
+                if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
+                    agent.act(agent_action)
+
+
+
 
         # agent_ids = list(self.id_to_agent.keys())
         # random.shuffle(agent_ids)
@@ -140,9 +150,6 @@ class OfficeWorldEnv(ParallelEnv):
         #     agent_action = actions[agent_id]
 
         #     target_coordinates = agent.get_target_coordinates(agent_action)
-
-
-
 
         # for agent_id, agent in self.id_to_agent.items():
         #     agent_action = actions[agent_id]
