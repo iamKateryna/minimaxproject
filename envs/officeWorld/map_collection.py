@@ -45,5 +45,5 @@ class MapCollection:
         (1, 4): OfficeWorldObjects.PLANT,
         (4, 4): OfficeWorldObjects.PLANT,
         (7, 4): OfficeWorldObjects.PLANT,
-        (1, 4): OfficeWorldObjects.PLANT,
+        (4, 1): OfficeWorldObjects.PLANT,
     }

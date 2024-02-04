@@ -89,7 +89,7 @@ class RewardMachineEnv(BaseParallelWrapper):
         return reward_machines_observation
     
 
-    def step(self, actions, agent_type, episode = None):
+    def step(self, actions, agent_type, episode = 0):
         if episode%7500 == 0:
             print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
         next_observation, _, env_done, _, info = self.env.step(actions)
@@ -129,8 +129,11 @@ class RewardMachineEnv(BaseParallelWrapper):
                 # saving information for generating counterfactual experiences
                 self.crm_params[agent_id] = self.observation, actions[agent_id], actions[other_agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
 
+        elif agent_type == 'human':
+            pass
+        
         else: 
-            raise NotImplementedError(f"CRM updates for {agent_type} are not implemented, available options -> 'minmax' or 'qlearning' ")
+            raise NotImplementedError(f"CRM updates for {agent_type} are not implemented, available options -> 'minmax' or 'qlearning' or 'human'")
 
                 
         # print(f'RM STATE IDs {self.current_rm_state_ids}')
@@ -166,6 +169,7 @@ class RewardMachineEnv(BaseParallelWrapper):
 
     def render(self, mode="human"):
         if mode == "human":
+            episode = 0
             # commands
             str_to_action = {"w": 0, "d": 1, "s": 2, "a": 3}
 
@@ -209,7 +213,8 @@ class RewardMachineEnv(BaseParallelWrapper):
                         self.env.SECOND_AGENT_ID: str_to_action[action2],
                     }
 
-                    _, rewards, done, _ = self.step(actions_to_execute)
+                    _, rewards, done, _, _, _ = self.step(actions_to_execute, agent_type=mode, episode=episode)
+                    # reward_machine_observations, reward_machine_rewards, done, info, true_propositions, self.current_rm_state_ids
                     done = any(done.values())
 
                     self.env.show()
@@ -230,6 +235,7 @@ class RewardMachineEnv(BaseParallelWrapper):
                     else:
                         print("\nSometimes the prize is not worth the costs\n")
                         break
+                episode += 1
         else:
             raise NotImplementedError
         
@@ -271,5 +277,5 @@ class RewardMachineEnv(BaseParallelWrapper):
     #         optimal_ARPS[rm_id].append(sum(rewards)/len(rewards))
     #     print("Done!\n")
 
-        return [sum(arps)/len(arps) for arps in optimal_ARPS]
+    #    return [sum(arps)/len(arps) for arps in optimal_ARPS]
  

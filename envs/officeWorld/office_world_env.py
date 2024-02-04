@@ -127,7 +127,7 @@ class OfficeWorldEnv(ParallelEnv):
         # check, if target coordinates are the same
         if len(target_coordinates) == 2 and (target_coordinates["primary_agent"]==target_coordinates["second_agent"]):
             # if yes, randomly select an agent to execute action, other agents do not move
-            selected_agent_id = random.choice(self.id_to_agent.keys())
+            selected_agent_id = random.choice(list(self.id_to_agent.keys()))
             # act
             selected_agent = self.id_to_agent[selected_agent_id]
             selected_agent.act(actions[selected_agent_id])
