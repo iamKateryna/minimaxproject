@@ -90,9 +90,9 @@ class RewardMachineEnv(BaseParallelWrapper):
     
 
     def step(self, actions, agent_type, episode = 0):
-        if episode%7500 == 0:
-            print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}")
         next_observation, _, env_done, _, info = self.env.step(actions)
+        if episode%100 == 0:
+            print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}, observation -> {next_observation}")
 
         # getting the output of the detectors
         true_propositions = self.env._get_events()
@@ -100,8 +100,6 @@ class RewardMachineEnv(BaseParallelWrapper):
         # init reward_machine_rewards, reward_machine_dones
         reward_machine_rewards = {agent_id: 0 for agent_id, _ in self.id_to_reward_machine.items()}
         reward_machine_dones = {agent_id: False for agent_id, _ in self.id_to_reward_machine.items()}
-        # print(f'RM STATE IDs {self.current_rm_state_ids}')
-        # print(f"episode -> {episode}")
 
         if agent_type == 'qlearning':
 

@@ -88,7 +88,7 @@ class OfficeWorldEnv(ParallelEnv):
                 agent_suffix = 2
                 
             event = self.office_world.get_true_propositions(
-                agent.coordinates, agent_suffix)
+                agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
             events += event
 
         return events
@@ -102,6 +102,7 @@ class OfficeWorldEnv(ParallelEnv):
         return self.office_world.observation_space
 
     def reset(self, seed=None, options=None):
+        self.coffee_available == True
         self.agents = copy(self.possible_agents)
         self.timestep = 0
 
@@ -138,24 +139,6 @@ class OfficeWorldEnv(ParallelEnv):
 
                 if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
                     agent.act(agent_action)
-
-
-
-
-        # agent_ids = list(self.id_to_agent.keys())
-        # random.shuffle(agent_ids)
-
-        # for agent_id in agent_ids:
-        #     agent = self.id_to_agent[agent_id]
-        #     agent_action = actions[agent_id]
-
-        #     target_coordinates = agent.get_target_coordinates(agent_action)
-
-        # for agent_id, agent in self.id_to_agent.items():
-        #     agent_action = actions[agent_id]
-
-        #     if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
-        #         agent.act(agent_action)
 
         self.timestep += 1
 

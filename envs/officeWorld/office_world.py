@@ -11,7 +11,8 @@ from .map_collection import MapCollection
 class OfficeWorld:
     OBSTACLE_OBJECT_TYPES = [OfficeWorldObjects.PLANT, 
                              OfficeWorldObjects.MAIL,
-                             OfficeWorldObjects.COFFEE,
+                             OfficeWorldObjects.COFFEE_1,
+                             OfficeWorldObjects.COFFEE_2,
                              OfficeWorldObjects.OFFICE]
 
 
@@ -127,15 +128,41 @@ class OfficeWorld:
     def get_forbidden_actions(self, coordinates) -> set[Actions]:
         return self._forbidden_actions[coordinates]
 
-    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int):
+    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int, coffee_1_available: bool, coffee_2_available: bool): #add second coffee sign (also change rms)
         """
         Returns the string with the propositions that are True in this state
         """
         ret = ""
 
+        # regular propositions
+        # if agent_coordinates in self._objects:
+        #     ret += self._objects[agent_coordinates]
+        #     ret += str(suffix)
+
+
+         # Check if agent is on the coffee cell and coffee is available
         if agent_coordinates in self._objects:
-            ret += self._objects[agent_coordinates]
-            ret += str(suffix)
+            proposition = self._objects[agent_coordinates]
+            # if coffee available, get coffee and make it unavailable
+            if proposition == "f" and coffee_1_available:
+                ret += proposition
+                ret += str(suffix)
+                coffee_1_available = False
+            # if coffee unavailable, do nothing
+            elif proposition == "f" and not coffee_1_available:
+                pass
+            elif proposition == "h" and coffee_2_available:
+                ret += proposition
+                ret += str(suffix)
+                coffee_2_available = False
+            # if coffee unavailable, do nothing
+            elif proposition == "h" and not coffee_2_available:
+                pass
+            # any other proposition -> regular propositions
+            else:
+                ret += proposition
+                ret += str(suffix)
+
 
         return ret
 

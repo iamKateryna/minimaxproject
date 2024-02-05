@@ -41,14 +41,6 @@ class RewardMachineWrapper(BaseParallelWrapper):
         # true_propositions and rm_state are for progress tracking purposes
         reward_machine_observations, reward_machine_rewards, done, info, true_propositions, rm_state = self.env.step(actions, agent_type, episode)
 
-        # print(f'\nINFO: {info}\n')
-
-        # print('UPDATING CRM EXPERIENCE\n')
-        # print(f"CRM PARAMS: {self.env.crm_params}")
-
-        # example of self.crm_params[agent_id]
-        # self.observations, actions[agent_id], next_observation, env_done, true_propositions
-
         if self.add_crm:
 
 

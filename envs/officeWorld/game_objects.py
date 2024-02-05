@@ -168,6 +168,7 @@ class OfficeWorldObjects(StrEnum):
     C = "c"
     D = "d"
     MAIL = "e"
-    COFFEE = "f"
+    COFFEE_1 = "f" # add second coffee sign
+    COFFEE_2 = "h" # add second coffee sign
     OFFICE = "g"
     PLANT = "n"
