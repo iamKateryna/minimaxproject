@@ -18,18 +18,18 @@ from utils import setup_logger
 import rm_constants
 
 
-def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, map_type, reward_machine_files, map_number, total_timesteps=100000, max_episode_length=1000, print_freq=0):
+def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, map_type, coffee_type, reward_machine_files, map_number, total_timesteps=100000, max_episode_length=1000, print_freq=0):
     setup_logger(filename)
 
-    policy_directory = 'policies'
+    policy_directory = "policies"
 
-    if not os.path.exists(f'{policy_directory}/{map_type}-{map_number}'):
-        os.makedirs(f'{policy_directory}/{map_type}-{map_number}')
+    if not os.path.exists(f"{policy_directory}/{map_type}-{map_number}"):
+        os.makedirs(f"{policy_directory}/{map_type}-{map_number}")
 
-    job_id = os.environ.get('SLURM_JOB_ID', 'N/A')
+    job_id = os.environ.get("SLURM_JOB_ID", "N/A")
     logging.info(f"job ID -> {job_id}")
 
-    office_env = OfficeWorldEnv(map_object=map_object, map_type=map_type)
+    office_env = OfficeWorldEnv(map_object=map_object, map_type=map_type, coffee_type=coffee_type)
     rm_env = RewardMachineEnv(office_env, reward_machine_files)
     env = RewardMachineWrapper(rm_env, add_crm=use_crm, gamma = 0.5)
 
@@ -41,16 +41,27 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, 
 
     # learning_agents = {office_env.possible_agents[0]: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
     #                    office_env.possible_agents[1]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)}
-    learning_agents = {office_env.possible_agents[0]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
-                       office_env.possible_agents[1]: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)}
+    
+    # learning_agents = {office_env.possible_agents[0]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
+    #                    office_env.possible_agents[1]: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)}
 
     # learning_agents = {office_env.possible_agents[0]: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
     #                    office_env.possible_agents[1]: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)}
 
+    # learning_agents = {office_env.possible_agents[0]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
+    #                    office_env.possible_agents[1]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)}
+    
+    # learning_agents = {office_env.possible_agents[0]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
+    #                    office_env.possible_agents[1]: RandomAgent(action_space)}
 
-    logging.info(f'USE CRM: {use_crm}, MAP: {map_object}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}')
+    learning_agents = {office_env.possible_agents[0]: MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
+                       office_env.possible_agents[1]: RandomAgent(action_space)}
+
+
+
+    logging.info(f"USE CRM: {use_crm}, MAP: {map_object}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}")
     logging.info(f"lr -> {learning_rate}, q_init -> {q_init}, discount_factor -> {discount_factor}")
-    print(f'USE CRM: {use_crm}, MAP: {map_object}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}')
+    print(f"USE CRM: {use_crm}, MAP: {map_object}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}")
     print(f"lr -> {learning_rate}, q_init -> {q_init}, discount_factor -> {discount_factor}")
 
     reward_total = {agent_id: 0 for agent_id in office_env.all_agents}
@@ -67,7 +78,7 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, 
         # reward_total = {agent_id: 0 for agent_id in office_env.all_agents}
         # wins_total = {agent_id: 0 for agent_id in office_env.all_agents}
         # broken_decorations_score = {agent_id: 0 for agent_id in office_env.all_agents}
-        # print(f'Start Episode {num_episodes +1}')
+        # print(f"Start Episode {num_episodes +1}")
 
         reset_env_state = env.reset()
         state = {agent_id: tuple(reset_env_state[agent_id]) for agent_id in office_env.all_agents}
@@ -76,27 +87,25 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, 
 
         while not done and num_steps_per_episode < max_episode_length:
             num_steps_per_episode += 1
-            # print(" ------------- NEW STEP ------------- ")
             actions_to_execute = {}
 
             # Selecting and executing the action
             for agent_id in office_env.all_agents:
-                agent, agent_state = learning_agents[agent_id], state[agent_id]
+                if isinstance(learning_agents[agent_id], MinMaxQLearningAgent) or isinstance(learning_agents[agent_id], QLearningAgent):
+                    agent, agent_state = learning_agents[agent_id], state[agent_id]
 
-                if agent_state not in agent.q_table:
-                    # print(f"creating new agent_state -> {agent_state}")
-                    agent.init_q_values(agent_state)
+                    if agent_state not in agent.q_table:
+                        # print(f"creating new agent_state -> {agent_state}")
+                        agent.init_q_values(agent_state)
 
                 action = agent.get_action(agent_state)
                 actions_to_execute[agent_id] = action
 
-            # print(f"actions_to_execute -> {actions_to_execute}")
 
-            next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute, agent_type = 'minmax', episode = num_episodes)
+            next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute, agent_type = "minmax", episode = num_episodes)
             done = any(done.values())
 
             # Updating the q-values
-            # print(" --- UPDARING Q-VALUES --- ")
             for agent_id in office_env.all_agents:
 
                 other_agent_id = office_env.all_agents[0] if office_env.all_agents[1] == agent_id else office_env.all_agents[1]
@@ -135,20 +144,19 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, 
             
 
             num_steps += 1
-
             # tracking the training details for logging
             agent1, agent2 = office_env.all_agents[0], office_env.all_agents[1]
-            if 'n1' in true_propositions and rm_state[agent1] == 4:
+            if "n1" in true_propositions and rm_state[agent1] == 4:
                 broken_decorations_score[agent1] +=1
-            if 'n2' in true_propositions and rm_state[agent2] == 4:
+            if "n2" in true_propositions and rm_state[agent2] == 4:
                 broken_decorations_score[agent2] +=1
-            if 'g1' in true_propositions and rm_state[agent1] == 4:
+            if "g1" in true_propositions and rm_state[agent1] == 4:
                 wins_total[agent1] += 1
-            if 'g2' in true_propositions and rm_state[agent2] == 4:
+            if "g2" in true_propositions and rm_state[agent2] == 4:
                 wins_total[agent2] += 1
-            if 'f1' in true_propositions:
+            if ("f1" or "h1") in true_propositions:
                 picked_coffees[agent1] += 1
-            if 'f2' in true_propositions:
+            if ("f2" or "h2") in true_propositions:
                 picked_coffees[agent2] += 1
 
             if print_freq and num_steps % print_freq == 0:
@@ -164,13 +172,13 @@ def main(filename, q_init, learning_rate, discount_factor, use_crm, map_object, 
                 
 
                 # save policies
-                for agent_id in office_env.all_agents:
-                    other_agent_id = office_env.all_agents[0] if office_env.all_agents[1] == agent_id else office_env.all_agents[1]
-                    checkpoint = num_steps/10e5
-                    policy_type = learning_agents[agent_id].name()[0] + learning_agents[other_agent_id].name()[0]
+                # for agent_id in office_env.all_agents:
+                #     other_agent_id = office_env.all_agents[0] if office_env.all_agents[1] == agent_id else office_env.all_agents[1]
+                #     checkpoint = num_steps/10e5
+                #     policy_type = learning_agents[agent_id].name()[0] + learning_agents[other_agent_id].name()[0]
                     
-                    with open(f'{policy_directory}/{map_type}-{map_number}/{checkpoint}-{policy_type}-{algorithm}-policy.pkl', 'wb') as file:
-                        pickle.dump(learning_agents[agent_id].q_table, file)
+                #     with open(f"{policy_directory}/{map_type}-{map_number}/{checkpoint}-{policy_type}-{algorithm}-policy.pkl", "wb") as file:
+                #         pickle.dump(learning_agents[agent_id].q_table, file)
 
 
 
@@ -178,23 +186,24 @@ if __name__ == '__main__':
     timestamp = datetime.now().strftime("%m%d_%H%M")
 
     use_crm = True 
-    map_type = 'simplified' # or 'base'
+    map_type = "simplified" # or "base"
+    coffee_type = "single" # or "unlimited"
 
     q_init=2 # do not change
     learning_rate = 0.5
     discount_factor = 0.9
-
+ 
     if use_crm:
-        algorithm = 'qrm'
+        algorithm = "qrm"
     else:
-        algorithm = 'qlearning'
+        algorithm = "qlearning"
     
     rm_list = rm_constants.MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES # add second coffee sign
     map_number = rm_list[0]
     map_object = MapCollection.MAP_4_OBJECTS
     reward_machine_files = rm_list[1:]
 
-    filename = f'logs/0402/map_{map_number}_mixed_agents_{algorithm}_test_same_start.log'
-    # filename = f'logs/map_{map_number}_HIGHER_PENALTY_DECORATION_minmax_{algorithm}.log'
+    filename = f"logs/0502_2/map_{map_number}_minmax_vs_random_agents_{algorithm}_test_single_coffee.log"
+    # filename = f"logs/0502_2/a_test_random.log"
 
-    main(filename, q_init, learning_rate, discount_factor,use_crm, map_object, map_type, reward_machine_files, map_number, total_timesteps=10e7, max_episode_length=10e3, print_freq = 10e5)
+    main(filename, q_init, learning_rate, discount_factor,use_crm, map_object, map_type, coffee_type, reward_machine_files, map_number, total_timesteps=10000000, max_episode_length=1000, print_freq = 10000)
