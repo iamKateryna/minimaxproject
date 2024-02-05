@@ -107,7 +107,6 @@ class RewardMachineEnv(BaseParallelWrapper):
                 # update RMs state
                 self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
                                                                                                                                     true_propositions)
-                # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
                 
                 # saving information for generating counterfactual experiences
                 self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
@@ -128,8 +127,11 @@ class RewardMachineEnv(BaseParallelWrapper):
                 self.crm_params[agent_id] = self.observation, actions[agent_id], actions[other_agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
 
         elif agent_type == 'human':
-            pass
-        
+            for agent_id, agent_rm in self.id_to_reward_machine.items():
+                # update RMs state
+                self.current_rm_state_ids[agent_id], reward_machine_rewards[agent_id], reward_machine_dones[agent_id] = agent_rm.step(self.current_rm_state_ids[agent_id],
+                                                                                                                                      true_propositions)
+                print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
         else: 
             raise NotImplementedError(f"CRM updates for {agent_type} are not implemented, available options -> 'minmax' or 'qlearning' or 'human'")
 
@@ -178,11 +180,10 @@ class RewardMachineEnv(BaseParallelWrapper):
                 if done:
                     print("-------------------------------- New episode --------------------------------")
                     observations = self.reset()
-                    # print("Current task:", self.rm_files[self.current_rm_id])
                     self.env.show()
                     print("Features:", observations)
-                    print("Events:", self.env._get_events())
                     print("RM state:", self.current_rm_state_ids)
+                    print(f"Coffee status: coffee 1 -> {self.env.coffee_1_available}, coffee 2 -> {self.env.coffee_2_available} ")
                     done = False
 
                 print(
@@ -211,15 +212,16 @@ class RewardMachineEnv(BaseParallelWrapper):
                         self.env.SECOND_AGENT_ID: str_to_action[action2],
                     }
 
-                    _, rewards, done, _, _, _ = self.step(actions_to_execute, agent_type=mode, episode=episode)
+                    _, rewards, done, _, true_propositions, self.current_rm_state_ids = self.step(actions_to_execute, agent_type=mode, episode=episode)
                     # reward_machine_observations, reward_machine_rewards, done, info, true_propositions, self.current_rm_state_ids
                     done = any(done.values())
 
                     self.env.show()
                     print("Features:", observations)
-                    print("Events:", self.env._get_events())
+                    print("Events:", true_propositions)
                     print("RM state:", self.current_rm_state_ids)
                     print("Reward:", rewards)
+                    print(f"Coffee status: coffee 1 -> {self.env.coffee_1_available}, coffee 2 -> {self.env.coffee_2_available} ")
                 else:
                     print("Forbidden action")
 

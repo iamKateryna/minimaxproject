@@ -22,6 +22,7 @@ class RewardMachine:
     def _compute_next_state(self, u, true_propositions):
         for next_u in self.delta_u[u]:
             if evaluate_dnf(self.delta_u[u][next_u], true_propositions):
+                print(f"dnf -> {self.delta_u[u][next_u]}, true_prop -> {true_propositions}")
                 return next_u
         return self.terminal_u # if no transition is defined for true_propositions
     
@@ -43,6 +44,7 @@ class RewardMachine:
         assert u != self.terminal_u, "the RM was set to a terminal state!"
         next_u = self.get_next_state(u, true_propositions)
         done = (next_u == self.terminal_u)
+        print(f"state -> {u}, true_props -> {true_propositions}, next_state -> {next_u}")
         # Getting the reward
         reward = self._get_reward(u,next_u, true_propositions)
 
