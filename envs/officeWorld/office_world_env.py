@@ -31,6 +31,7 @@ class OfficeWorldEnv(ParallelEnv):
             self.SECOND_AGENT_ID: self._generate_agent(SecondAgent, 2),
         }
         self.timestep = 0
+    
 
     @property
     def primary_agent(self):
@@ -46,7 +47,7 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent], agent_id) -> Agent:
         x, y = self.office_world.generate_coordinates()
-        # place both agents next to the closest coffee to the office
+        # place both agents next to the closest coffee to the office for 12*9 grid
         # x, y = 3, 7
         # place both agents on an equal distance from both coffee machines
         if agent_id == 2:
@@ -87,8 +88,10 @@ class OfficeWorldEnv(ParallelEnv):
             elif agent_id == self.SECOND_AGENT_ID:
                 agent_suffix = 2
                 
-            event = self.office_world.get_true_propositions(
+            event, self.coffee_1_available, self.coffee_2_available = self.office_world.get_true_propositions(
                 agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
+            # event = self.office_world.get_true_propositions(
+            #      agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
             events += event
 
         return events
@@ -102,7 +105,8 @@ class OfficeWorldEnv(ParallelEnv):
         return self.office_world.observation_space
 
     def reset(self, seed=None, options=None):
-        self.coffee_available == True
+        self.coffee_1_available = True
+        self.coffee_2_available = True
         self.agents = copy(self.possible_agents)
         self.timestep = 0
 
@@ -256,54 +260,4 @@ class OfficeWorldEnv(ParallelEnv):
                         else:
                             print(" ", end="")
                     print()
-
-
-    # def render(self, mode="human"):
-    #     if mode == "human":
-    #         # commands
-    #         str_to_action = {"w": 0, "d": 1, "s": 2, "a": 3}
-
-    #         # play the game!
-    #         done = True
-    #         while True:
-    #             if done:
-    #                 print("New episode --------------------------------")
-    #                 observations = self.reset()
-    #                 self.show()
-    #                 print("Features:", observations)
-    #                 print("Events:", self._get_events())
-    #                 done = False
-
-    #             print(
-    #                 "\nSelect action for the primary agent?(WASD keys or q to quite) ",
-    #                 end="",
-    #             )
-    #             action1 = input()
-
-    #             if action1 == "q":
-    #                 break
-
-    #             print(
-    #                 "\nSelect action for the second agent?(WASD keys or q to quite) ",
-    #                 end="",
-    #             )
-    #             action2 = input()
-    #             print()
-
-    #             if action2 == "q":
-    #                 break
-
-    #             # Executing action
-    #             if action1 in str_to_action and action2 in str_to_action:
-    #                 actions_to_execute = {
-    #                     self.PRIMARY_AGENT_ID: str_to_action[action1],
-    #                     self.SECOND_AGENT_ID: str_to_action[action2],
-    #                 }
-
-    #                 self.step(actions_to_execute)
-    #                 self.show()
-    #                 print("Events:", self._get_events())
-    #             else:
-    #                 print("Forbidden action")
-    #     else:
-    #         raise NotImplementedError
+                    

@@ -16,7 +16,7 @@ class OfficeWorld:
                              OfficeWorldObjects.OFFICE]
 
 
-    def __init__(self, map_height: int = 12, map_width: int = 9, map_object = MapCollection.MAP_2_OBJECTS):
+    def __init__(self, map_height: int = 12, map_width: int = 9, map_object = MapCollection.MAP_4_OBJECTS):
         self._objects = map_object
         self._map_height = map_height
         self._map_width = map_width
@@ -128,7 +128,7 @@ class OfficeWorld:
     def get_forbidden_actions(self, coordinates) -> set[Actions]:
         return self._forbidden_actions[coordinates]
 
-    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int, coffee_1_available: bool, coffee_2_available: bool): #add second coffee sign (also change rms)
+    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int, coffee_1: bool, coffee_2: bool): #add second coffee sign (also change rms)
         """
         Returns the string with the propositions that are True in this state
         """
@@ -139,32 +139,31 @@ class OfficeWorld:
         #     ret += self._objects[agent_coordinates]
         #     ret += str(suffix)
 
+        # return ret
 
-         # Check if agent is on the coffee cell and coffee is available
+
+
+        #  # Check if agent is on the coffee cell and coffee is available
         if agent_coordinates in self._objects:
             proposition = self._objects[agent_coordinates]
             # if coffee available, get coffee and make it unavailable
-            if proposition == "f" and coffee_1_available:
-                ret += proposition
-                ret += str(suffix)
-                coffee_1_available = False
+            if proposition == "f" and coffee_1:
+                ret += "f" + str(suffix)
+                coffee_1 = False
             # if coffee unavailable, do nothing
-            elif proposition == "f" and not coffee_1_available:
+            elif proposition == "f" and not coffee_1:
                 pass
-            elif proposition == "h" and coffee_2_available:
-                ret += proposition
-                ret += str(suffix)
-                coffee_2_available = False
+            elif proposition == "h" and coffee_2:
+                ret += "h" + str(suffix)
+                coffee_2 = False
             # if coffee unavailable, do nothing
-            elif proposition == "h" and not coffee_2_available:
+            elif proposition == "h" and not coffee_2:
                 pass
             # any other proposition -> regular propositions
             else:
                 ret += proposition
                 ret += str(suffix)
-
-
-        return ret
+        return ret, coffee_1, coffee_2
 
     # def get_model(self):
     #     """
