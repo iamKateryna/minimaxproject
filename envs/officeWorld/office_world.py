@@ -127,23 +127,15 @@ class OfficeWorld:
 
     def get_forbidden_actions(self, coordinates) -> set[Actions]:
         return self._forbidden_actions[coordinates]
+    
 
-    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int, coffee_1: bool, coffee_2: bool): #add second coffee sign (also change rms)
+    def get_true_propositions_single_coffee(self, agent_coordinates: tuple[int, int], suffix: int, coffee_1: bool, coffee_2: bool): #add second coffee sign (also change rms)
         """
-        Returns the string with the propositions that are True in this state
+        Returns the string with the propositions that are True in this state, 
+        checks for available coffee in the coffee machines
         """
-        ret = ""
-
-        # regular propositions
-        # if agent_coordinates in self._objects:
-        #     ret += self._objects[agent_coordinates]
-        #     ret += str(suffix)
-
-        # return ret
-
-
-
-        #  # Check if agent is on the coffee cell and coffee is available
+        
+        # Check if agent is on the coffee cell and coffee is available
         if agent_coordinates in self._objects:
             proposition = self._objects[agent_coordinates]
             # if coffee available, get coffee and make it unavailable
@@ -164,6 +156,20 @@ class OfficeWorld:
                 ret += proposition
                 ret += str(suffix)
         return ret, coffee_1, coffee_2
+        
+
+    def get_true_propositions(self, agent_coordinates: tuple[int, int], suffix: int): 
+        """
+        Returns the string with the propositions that are True in this state
+        """
+        ret = ""
+
+        # regular propositions
+        if agent_coordinates in self._objects:
+            ret += self._objects[agent_coordinates]
+            ret += str(suffix)
+
+        return ret
 
     # def get_model(self):
     #     """

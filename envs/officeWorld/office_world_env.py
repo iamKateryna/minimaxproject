@@ -15,15 +15,16 @@ class OfficeWorldEnv(ParallelEnv):
     PRIMARY_AGENT_ID = "primary_agent"
     SECOND_AGENT_ID = "second_agent"
 
-    def __init__(self, map_object, map_type):
+    def __init__(self, map_object, map_type, coffee_type = "single"):
         self.map_type = map_type
+        self.coffee_type = coffee_type # "unlimited"/"single"
 
         if map_type=="base":
             self.office_world = OfficeWorld(map_object=map_object)
         elif map_type=="simplified":
             self.office_world = OfficeWorldSimlified(map_object=map_object)
         else:           
-            raise NotImplementedError
+            raise NotImplementedError(f"Map for {map_type} is not implemented, available options -> 'simplified' and 'base'")
 
         self.possible_agents = [self.PRIMARY_AGENT_ID, self.SECOND_AGENT_ID]
         self.id_to_agent = {
@@ -88,10 +89,18 @@ class OfficeWorldEnv(ParallelEnv):
             elif agent_id == self.SECOND_AGENT_ID:
                 agent_suffix = 2
                 
-            event, self.coffee_1_available, self.coffee_2_available = self.office_world.get_true_propositions(
-                agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
-            # event = self.office_world.get_true_propositions(
-            #      agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
+            if self.coffee_type == "unlimited":
+
+                event = self.office_world.get_true_propositions(
+                     agent.coordinates, agent_suffix)
+                
+            elif self.coffee_type == "single":
+
+                event, self.coffee_1_available, self.coffee_2_available = self.office_world.get_true_propositions_single_coffee(
+                    agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
+            else: 
+                raise NotImplementedError(f"Events for coffee machine type {self.coffee_type} are not implemented, available options -> 'unlimited' and 'single'")
+            
             events += event
 
         return events
@@ -119,6 +128,7 @@ class OfficeWorldEnv(ParallelEnv):
         return observations, infos
 
     def step(self, actions):
+        # cannot move to the same cell
         target_coordinates = {}
 
         for agent_id, agent in self.id_to_agent.items():
@@ -131,12 +141,15 @@ class OfficeWorldEnv(ParallelEnv):
 
         # check, if target coordinates are the same
         if len(target_coordinates) == 2 and (target_coordinates["primary_agent"]==target_coordinates["second_agent"]):
+            
             # if yes, randomly select an agent to execute action, other agents do not move
             selected_agent_id = random.choice(list(self.id_to_agent.keys()))
             # act
             selected_agent = self.id_to_agent[selected_agent_id]
             selected_agent.act(actions[selected_agent_id])
+
         else:
+            
             # else, regular actions
             for agent_id, agent in self.id_to_agent.items():
                 agent_action = actions[agent_id]
