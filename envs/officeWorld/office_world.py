@@ -134,6 +134,8 @@ class OfficeWorld:
         Returns the string with the propositions that are True in this state, 
         checks for available coffee in the coffee machines
         """
+
+        ret = ""
         
         # Check if agent is on the coffee cell and coffee is available
         if agent_coordinates in self._objects:
