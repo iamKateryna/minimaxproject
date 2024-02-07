@@ -226,10 +226,7 @@ class RewardMachineEnv(BaseParallelWrapper):
                     print("Forbidden action")
 
                 if done:
-                    if rewards[self.env.PRIMARY_AGENT_ID] == 2 or rewards[self.env.SECOND_AGENT_ID] == 2:
-                        print('\nThe supreme art of war is to subdue the enemy without fighting\n')
-                        break
-                    elif rewards[self.env.PRIMARY_AGENT_ID] == 1 or rewards[self.env.SECOND_AGENT_ID] == 1:
+                    if rewards[self.env.PRIMARY_AGENT_ID] == 1 or rewards[self.env.SECOND_AGENT_ID] == 1:
                         print('\nYou were born to win\n')
                         break
                     else:
