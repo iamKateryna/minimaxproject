@@ -5,8 +5,9 @@ __pycache__
 logs/
 plots/
 archive/
+policies/
+scripts/
 
-scripts.py
+plot.py
 run.py
-play.py
 utils.py

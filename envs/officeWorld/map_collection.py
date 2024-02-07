@@ -53,3 +53,4 @@ class MapCollection:
         (6, 3): OfficeWorldObjects.COFFEE_2, # add second coffee sign
         (1, 1): OfficeWorldObjects.OFFICE,
     }
+    
