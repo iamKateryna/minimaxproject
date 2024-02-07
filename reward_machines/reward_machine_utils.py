@@ -3,7 +3,6 @@ def evaluate_dnf(formula,true_props):
     Evaluates 'formula' assuming 'true_props' are the only true propositions and the rest are false. 
     e.g. evaluate_dnf("a&b|!c&d","d") returns True 
     """
-    print(formula,true_props)
     # ANDs
     if "&" in formula:
         for f in formula.split("&"):
