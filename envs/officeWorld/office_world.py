@@ -157,6 +157,7 @@ class OfficeWorld:
             else:
                 ret += proposition
                 ret += str(suffix)
+                
         return ret, coffee_1, coffee_2
         
 

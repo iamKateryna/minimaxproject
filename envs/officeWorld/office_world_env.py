@@ -15,7 +15,7 @@ class OfficeWorldEnv(ParallelEnv):
     PRIMARY_AGENT_ID = "primary_agent"
     SECOND_AGENT_ID = "second_agent"
 
-    def __init__(self, map_object, map_type, coffee_type = "single"):
+    def __init__(self, map_object, map_type, coffee_type):
         self.map_type = map_type
         self.coffee_type = coffee_type # "unlimited"/"single"
 
@@ -52,9 +52,9 @@ class OfficeWorldEnv(ParallelEnv):
         # x, y = 3, 7
         # place both agents on an equal distance from both coffee machines
         if agent_id == 2:
-            x, y = 6, 0
+            x, y = 7, 0
         else:
-            x, y = 6, 0
+            x, y = 8, 1
 
         return agent_class(x, y)
 
