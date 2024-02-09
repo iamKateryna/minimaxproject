@@ -7,6 +7,8 @@ plots/
 archive/
 policies/
 scripts/
+wandb/
+envs/simple_adversary/
 
 plot.py
 run.py
