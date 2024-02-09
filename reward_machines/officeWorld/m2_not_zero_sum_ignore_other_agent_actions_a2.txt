@@ -1,7 +1,0 @@
-0 #initial state
-[2] #terminal state
-(0,0, '!f2&!n2', ConstantRewardFunction(0))
-(0,1, 'f2&!n2', ConstantRewardFunction(0))
-(1,1, '!g2&!n2', ConstantRewardFunction(0))
-(1,2, 'g2&!n2', ConstantRewardFunction(1))
-(1,2, 'n2', ConstantRewardFunction(-1))
