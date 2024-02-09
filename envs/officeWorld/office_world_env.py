@@ -15,9 +15,10 @@ class OfficeWorldEnv(ParallelEnv):
     PRIMARY_AGENT_ID = "primary_agent"
     SECOND_AGENT_ID = "second_agent"
 
-    def __init__(self, map_object, map_type, coffee_type):
+    def __init__(self, map_object, map_type, coffee_type, agents_can_be_in_same_cell):
         self.map_type = map_type
         self.coffee_type = coffee_type # "unlimited"/"single"
+        self.agents_can_be_in_same_cell = agents_can_be_in_same_cell
 
         if map_type=="base":
             self.office_world = OfficeWorld(map_object=map_object)
@@ -128,34 +129,43 @@ class OfficeWorldEnv(ParallelEnv):
         return observations, infos
 
     def step(self, actions):
-        # cannot move to the same cell
-        target_coordinates = {}
 
-        for agent_id, agent in self.id_to_agent.items():
-            agent_action = actions[agent_id] # get action
-
-            # check if it is allowed
-            if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
-                # if yes, calculate taget coordinates
-                target_coordinates[agent_id] = agent.get_target_coordinates(agent_action)
-
-        # check, if target coordinates are the same
-        if len(target_coordinates) == 2 and (target_coordinates["primary_agent"]==target_coordinates["second_agent"]):
-            
-            # if yes, randomly select an agent to execute action, other agents do not move
-            selected_agent_id = random.choice(list(self.id_to_agent.keys()))
-            # act
-            selected_agent = self.id_to_agent[selected_agent_id]
-            selected_agent.act(actions[selected_agent_id])
-
-        else:
-            
-            # else, regular actions
+        if self.agents_can_be_in_same_cell:
             for agent_id, agent in self.id_to_agent.items():
                 agent_action = actions[agent_id]
 
                 if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
                     agent.act(agent_action)
+        
+        else:
+            # cannot move to the same cell
+            target_coordinates = {}
+
+            for agent_id, agent in self.id_to_agent.items():
+                agent_action = actions[agent_id] # get action
+
+                # check if it is allowed
+                if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
+                    # if yes, calculate taget coordinates
+                    target_coordinates[agent_id] = agent.get_target_coordinates(agent_action)
+
+            # check, if target coordinates are the same
+            if len(target_coordinates) == 2 and (target_coordinates["primary_agent"]==target_coordinates["second_agent"]):
+                
+                # if yes, randomly select an agent to execute action, other agents do not move
+                selected_agent_id = random.choice(list(self.id_to_agent.keys()))
+                # act
+                selected_agent = self.id_to_agent[selected_agent_id]
+                selected_agent.act(actions[selected_agent_id])
+
+            else:
+                
+                # else, regular actions
+                for agent_id, agent in self.id_to_agent.items():
+                    agent_action = actions[agent_id]
+
+                    if agent_action not in self.office_world.get_forbidden_actions(agent.coordinates):
+                        agent.act(agent_action)
 
         self.timestep += 1
 
