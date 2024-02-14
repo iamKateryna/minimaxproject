@@ -3,22 +3,38 @@ from math import isclose
 import numpy as np
 
 class MinMaxQLearningAgent:
-    def __init__(self, action_space, learning_rate=0.2, discount_factor=0.9, exploration_rate=0.1, q_init=2) -> None:
+    def __init__(self, action_space, learning_rate=0.2, discount_factor=0.9, exploration_rate=0.95, min_epsilon = 0.2, decay_rate = 0.9995, q_init=2, q_table = None) -> None:
         self.lr = learning_rate
         self.gamma = discount_factor
         self.epsilon = exploration_rate
-        self.q_table = {}
         self.q_init = q_init # initial q-value for unseen states
+        self.min_epsilon = min_epsilon
+        self.decay_rate = decay_rate
         
         self.own_action_space = action_space
         self.opponent_action_space = action_space
         self.current_episode = None
 
+        if not q_table:
+            self.q_table = {}
+        else:
+            self.q_table = q_table
+
+    
+    def decay_epsilon(self):
+        # Update epsilon using exponential decay
+        # self.epsilon = max(self.min_epsilon, self.epsilon * self.decay_rate)
+        self.epsilon = max(self.epsilon - ((1-0.2)/40000000), self.min_epsilon)
+
+
+    def decay_lr(self):
+        self.lr = max(self.lr*0.99999954, 0.01)
+
 
     def get_qvalue(self, state, own_action, opponent_action):
         return self.q_table[state][own_action][opponent_action]
-
     
+
     def get_value(self, state):
 
         best_value = -float('inf')
@@ -60,6 +76,9 @@ class MinMaxQLearningAgent:
 
 
     def get_action(self, state, episode = None):
+        
+        # self.decay_epsilon()
+
         # Exploration vs exploitation tradeof
         if random.random() < self.epsilon:
             return random.choice(range(self.own_action_space.n))
@@ -101,6 +120,8 @@ class MinMaxQLearningAgent:
             # print(f"self.q_table[state][own_action][opponent_action]: {self.q_table[state][own_action][opponent_action]} ")
             
             self.q_table[state][own_action][opponent_action] += self.lr * (value - current_q)
+            
+        self.decay_lr()
 
     def name(self):
         return 'minmaxq'

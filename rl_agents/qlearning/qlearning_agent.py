@@ -3,13 +3,30 @@ import math
 
 
 class QLearningAgent:
-    def __init__(self, action_space, learning_rate=0.5, discount_factor=0.9, exploration_rate=0.1, q_init=2):
+    def __init__(self, action_space, learning_rate=0.5, discount_factor=0.9, exploration_rate=0.95, min_epsilon = 0.2, decay_rate = 0.9995, q_init=2, q_table=None):
         self.lr = learning_rate
         self.gamma = discount_factor
         self.epsilon = exploration_rate
-        self.q_table = {}
         self.q_init = q_init # initial q-value for unseen states
         self.action_space = action_space
+        self.min_epsilon = min_epsilon
+        self.decay_rate = decay_rate
+
+        if not q_table:
+            self.q_table = {}
+        else:
+            self.q_table = q_table
+
+
+    def decay_lr(self):
+        self.lr = max(self.lr*0.9999954, 0.01)
+
+
+    def decay_epsilon(self):
+        # Update epsilon using exponential decay
+        # self.epsilon = max(self.min_epsilon, self.epsilon * self.decay_rate)
+        self.epsilon = max(self.epsilon - ((1-0.0001)/100000000), self.min_epsilon)
+
     
     def get_qvalue(self, state, action):
         return self.q_table[state][action]
@@ -46,7 +63,9 @@ class QLearningAgent:
         return best_actions[0]
 
     # returns action for state state
-    def get_action(self, state):
+    def get_action(self, state, episode = None):
+        # if episode and episode%5:
+        # self.decay_epsilon()
         if random.random() < self.epsilon:
             # return random.choice([action for action in range(self.action_space.n)])
             return random.choice(range(self.action_space.n))
@@ -82,6 +101,8 @@ class QLearningAgent:
             # print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
             self.q_table[state][action] += self.lr * (value - q_value)
             # print(f"self.q_table[state] -> {self.q_table[state]}")
+
+        self.decay_lr()
 
     def name(self):
         return 'qlearning'
