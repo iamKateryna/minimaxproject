@@ -19,7 +19,7 @@ from utils import setup_logger
 import rm_constants
 
 
-def main(filename, agent_0_type, agent_1_type, q_init, learning_rate, discount_factor, use_crm, map_object, map_type, coffee_type, agents_can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq):
+def main(filename, details, algorithm, agent_0_type, agent_1_type, q_init, learning_rate, discount_factor, exploration_rate, use_crm, map_object, map_type, coffee_type, agents_can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq):
     wandb.init(
         name=filename,
         project="minimaxQRM",
@@ -60,9 +60,9 @@ def main(filename, agent_0_type, agent_1_type, q_init, learning_rate, discount_f
 
     for agent_type, agent_id in zip(agent_types, agent_ids):
         if agent_type == "minmax":
-            learning_agents[agent_id] = MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)
+            learning_agents[agent_id] = MinMaxQLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor, exploration_rate=exploration_rate)
         elif agent_type == "qlearning":
-            learning_agents[agent_id] = QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor)
+            learning_agents[agent_id] = QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor, exploration_rate=exploration_rate)
         elif agent_type == "random":
             learning_agents[agent_id] = RandomAgent(action_space)
     
@@ -110,8 +110,12 @@ def main(filename, agent_0_type, agent_1_type, q_init, learning_rate, discount_f
                         # print(f"creating new agent_state -> {agent_state}")
                         agent.init_q_values(agent_state)
 
-                action = agent.get_action(agent_state)
+                action = agent.get_action(agent_state, num_episodes)
+                # action = agent.get_action(agent_state)
                 actions_to_execute[agent_id] = action
+            
+            epsilon = learning_agents[agent_ids[0]].epsilon
+            learning_rate = learning_agents[agent_ids[0]].lr
 
 
             next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute, agent_type = "minmax", episode = num_episodes)
@@ -189,6 +193,11 @@ def main(filename, agent_0_type, agent_1_type, q_init, learning_rate, discount_f
                     "picked_coffees_a2": picked_coffees[agent_ids[1]],
                     "broken_decorations_a2": broken_decorations_score[agent_ids[1]],
 
+                    "epsilon": epsilon,
+                    "details": details,
+                    "learning_rate": learning_rate,
+                    "discount_factor": discount_factor,
+
                 })
 
                 reward_total = {agent_id: 0 for agent_id in agent_ids}
@@ -200,10 +209,10 @@ def main(filename, agent_0_type, agent_1_type, q_init, learning_rate, discount_f
                 if num_steps%(100*print_freq)==0:
                     # save policies
                     for agent_id in agent_ids:
-                        checkpoint = num_steps/(100*print_freq)
+                        checkpoint = num_steps/(1000*print_freq)
                         policy_type = agent_types[0] + agent_types[1]
-                        
-                        with open(f"{policy_directory}/{map_type}-{map_number}/{checkpoint}-{policy_type}-{algorithm}-policy.pkl", "wb") as file:
+                         
+                        with open(f"{policy_directory}/{map_type}-{map_number}/{checkpoint}-{policy_type}-{algorithm}{details}-policy.pkl", "wb") as file:
                             pickle.dump(learning_agents[agent_id].q_table, file)
 
 
@@ -211,38 +220,41 @@ def main(filename, agent_0_type, agent_1_type, q_init, learning_rate, discount_f
 if __name__ == '__main__':
     timestamp = datetime.now().strftime("%m%d_%H%M")
 
-    use_crm = True 
+    use_crm = False 
     map_type = "simplified" # or "base"
     can_be_in_same_cell = False
-    coffee_type = "single" # or "single", pay attention at the rm_files
+    coffee_type = "single" # "unlimited" or "single", pay attention at the rm_files
 
     # agent_types = ["minmax", "qlearning"] # "minmax" or "qlearning" or "random"
-    # agent_types = ["minmax", "minmax"]
+    # agent_types = ["qlearning", "minmax"]
+    agent_types = ["minmax", "minmax"]
     # agent_types = ["minmax", "random"]
     # agent_types = ["qlearning", "random"]
-    agent_types = ["qlearning", "qlearning"]
+    # agent_types = ["qlearning", "qlearning"]
 
-    total_timesteps=1000000
+    total_timesteps=10000000
     max_episode_length=1000
     print_freq = 10000
 
-    q_init = 2 # do not change
-    learning_rate = 0.5
-    discount_factor = 0.9
+    exploration_rate = 0.2
+
+    q_init = 1 # do not change
+    learning_rate = 1.0
+    discount_factor = 0.8
  
     if use_crm:
         algorithm = "qrm"
     else:
         algorithm = "qlearning"
 
-    details = "-original-rewards"
+    details = "-decaying-lr-same-start-base-map6"
     
-    rm_list = rm_constants.MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES 
+    rm_list = rm_constants.MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES
     map_number = rm_list[0]
     map_object = MapCollection.MAP_4_OBJECTS
     reward_machine_files = rm_list[1:]
 
-    filename = f"logs/0902/map{map_number}-{agent_types[0]}-vs-{agent_types[1]}-agents-{algorithm}-{coffee_type}-{can_be_in_same_cell}{details}.log"
+    filename = f"logs/1402/map{map_number}-{agent_types[0]}-vs-{agent_types[1]}-agents-{algorithm}-{coffee_type}-{can_be_in_same_cell}{details}.log"
     # filename = f"logs/0502_2/a_test_coffee_type.log"
 
-    main(filename, agent_types[0], agent_types[1], q_init, learning_rate, discount_factor,use_crm, map_object, map_type, coffee_type, can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq)
+    main(filename, details, algorithm, agent_types[0], agent_types[1], q_init, learning_rate, discount_factor, exploration_rate, use_crm, map_object, map_type, coffee_type, can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq)
