@@ -54,3 +54,10 @@ class MapCollection:
         (1, 1): OfficeWorldObjects.OFFICE,
     }
     
+    MAP_6_OBJECTS: dict[tuple[int, int], str] = {
+        (5, 2): OfficeWorldObjects.COFFEE_1, # add second coffee sign
+        (6, 3): OfficeWorldObjects.COFFEE_2, # add second coffee sign
+        (1, 1): OfficeWorldObjects.OFFICE,
+        (4, 4): OfficeWorldObjects.PLANT,
+        (7, 4): OfficeWorldObjects.PLANT,
+    }
