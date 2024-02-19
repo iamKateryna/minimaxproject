@@ -15,10 +15,15 @@ class OfficeWorldEnv(ParallelEnv):
     PRIMARY_AGENT_ID = "primary_agent"
     SECOND_AGENT_ID = "second_agent"
 
-    def __init__(self, map_object, map_type, coffee_type, agents_can_be_in_same_cell):
+    def __init__(self, map_object, map_type, coffee_type, predator_prey, agents_can_be_in_same_cell):
         self.map_type = map_type
         self.coffee_type = coffee_type # "unlimited"/"single"
-        self.agents_can_be_in_same_cell = agents_can_be_in_same_cell
+
+        self.predator_prey = predator_prey
+        if self.predator_prey:
+            self.agents_can_be_in_same_cell = True
+        else: 
+            self.agents_can_be_in_same_cell = agents_can_be_in_same_cell
 
         if map_type=="base":
             self.office_world = OfficeWorld(map_object=map_object)
@@ -49,13 +54,10 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent], agent_id) -> Agent:
         x, y = self.office_world.generate_coordinates()
-        # place both agents next to the closest coffee to the office for 12*9 grid
-        # x, y = 3, 7
-        # place both agents on an equal distance from both coffee machines
         if agent_id == 2:
             x, y = 7, 0
         else:
-            x, y = 8, 1
+            x, y = 7, 0
 
         return agent_class(x, y)
 
@@ -74,7 +76,7 @@ class OfficeWorldEnv(ParallelEnv):
 
             observations[agent_id] = {
                 "observation": agent_observation,
-                "action_mask": action_mask,
+                # "action_mask": action_mask,
             }
 
         return observations
@@ -101,8 +103,11 @@ class OfficeWorldEnv(ParallelEnv):
                     agent.coordinates, agent_suffix, self.coffee_1_available, self.coffee_2_available) # add second coffee sign
             else: 
                 raise NotImplementedError(f"Events for coffee machine type {self.coffee_type} are not implemented, available options -> 'unlimited' and 'single'")
-            
+
             events += event
+
+        if self.predator_prey and (self.primary_agent.coordinates ==  self.second_agent.coordinates):
+                events += 't' # t for trapped
 
         return events
 
