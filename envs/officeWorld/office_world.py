@@ -76,18 +76,6 @@ class OfficeWorld:
         # add 'doors' - map-specific
         location_to_forbidden_actions = self._add_doors(location_to_forbidden_actions)
 
-        # for y in [1, 7]:
-        #     for x in [2, 5, 8]:
-        #         location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
-        #         location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)
-
-        # for x in [1, 4, 7, 10]:
-        #     location_to_forbidden_actions[(x, 5)].remove(Actions.UP)
-        #     location_to_forbidden_actions[(x, 6)].remove(Actions.DOWN)
-        # for x in [1, 10]:
-        #     location_to_forbidden_actions[(x, 2)].remove(Actions.UP)
-        #     location_to_forbidden_actions[(x, 3)].remove(Actions.DOWN)
-
         return location_to_forbidden_actions
 
     @property
