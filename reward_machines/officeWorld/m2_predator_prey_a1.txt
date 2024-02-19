@@ -1,7 +1,7 @@
 0 #initial state
 [4] #terminal state
-(0,0, '!f1&!n1&!n2&!t', ConstantRewardFunction(0))
-(0,1, 'f1&!n1&&!n2&!t', ConstantRewardFunction(0))
+(0,0, '!f1&!h1&!n1&!n2&!t', ConstantRewardFunction(0))
+(0,1, 'f1|h1&!n1&!n2&!t', ConstantRewardFunction(0))
 (0,4, '!n1&!n2&t', ConstantRewardFunction(-5))
 (0,4, 'n1&n2', ConstantRewardFunction(0))
 (0,4, '!n1&n2', ConstantRewardFunction(1))
