@@ -21,6 +21,34 @@ The foundational code for this project, particularly the single-agent OfficeWorl
     pip install -r requirements.txt
 ### Usage
 
-To play the game, run:
+To play the human version of the game, run:
 ```bash
-    python human_mode.py
+    python run.py
+```
+
+To modify map or objects placement, refer to `map_collection.py`, to modify Reward Machines type, refer to `rm_constants.py`. Make sure to choose correspondimg options. 
+
+Note: MAP_2 RMs refer to RMs for maps with decorations, MAP_3 RMs refer to RMs for maps without decorations. MapCollection's map numbers have nothing to do with MAP_2 or MAP_3 in RM files, will be changed in the future. Sorryyyy
+
+To run the experiments, run:
+```bash
+    python play_different_agents.py
+```
+
+Configurations for now are inside the file.
+
+- `predator_prey: bool`, True - predator_prey option (where agent 2's task is to catch agent 1 while it delivers coffee to the office), False - both agents' task is to deliver coffee to the office.
+- `map_type: "simplified" or "base"`, simplified - 6 by 9, base - 12 by 9
+- `use_crms: (bool, bool)`, True - add crm, False - do not add crm
+- `can_be_in_same_cell: bool`, True - can, False - cannot
+- `coffee_type: "unlimited" or "single"` , pay attention at the rm_files to choose corresponding ones, single - one coffee per coffee machine
+- `agent_types = (str, st)`, "minmax" or "qlearning" or "random"
+- `total_timesteps: int`, total number of steps
+- `max_episode_length: int`, upper booundary for the episode length (in timesteps)
+- `print_freq: int`, print/log frequency of the progress
+
+- `q_init: float`
+- `learning_rate: float`
+- `discount_factor: float`
+- `exploration_rate: float`
+- `details: str`, details of the training to capture in .log file name and run name in wandb
