@@ -37,15 +37,27 @@ class RewardMachineEnv(BaseParallelWrapper):
         self.observation_dict = spaces.Dict({
                                             'features': spaces.Dict({
                                                 'primary_agent': spaces.Dict({
-                                                    'observation': env.observation_space(self.env.PRIMARY_AGENT_ID),
-                                                    'action_mask': spaces.MultiBinary(4)
+                                                    'observation': env.observation_space(self.env.PRIMARY_AGENT_ID)
                                                     }),
                                                 'second_agent': spaces.Dict({
-                                                    'observation': env.observation_space(self.env.SECOND_AGENT_ID),
-                                                    'action_mask': spaces.MultiBinary(4)
+                                                    'observation': env.observation_space(self.env.SECOND_AGENT_ID)
                                                     })
                                                                     }),
                                             'rm-state': spaces.Box(low=0, high=1, shape=(self.num_rm_states,), dtype=np.uint8)})
+        
+        # self.observation_dict = spaces.Dict({
+        #                                     'features': spaces.Dict({
+        #                                         'primary_agent': spaces.Dict({
+        #                                             'observation': env.observation_space(self.env.PRIMARY_AGENT_ID),
+        #                                             'action_mask': spaces.MultiBinary(4)
+        #                                             }),
+        #                                         'second_agent': spaces.Dict({
+        #                                             'observation': env.observation_space(self.env.SECOND_AGENT_ID),
+        #                                             'action_mask': spaces.MultiBinary(4)
+        #                                             })
+        #                                                             }),
+        #                                     'rm-state': spaces.Box(low=0, high=1, shape=(self.num_rm_states,), dtype=np.uint8)})
+        
         flatdim = spaces.flatdim(self.observation_dict)
         space_low = float(env.observation_space(self.env.PRIMARY_AGENT_ID).low[0])
         space_high = float(env.observation_space(self.env.PRIMARY_AGENT_ID).high[0])
@@ -91,8 +103,7 @@ class RewardMachineEnv(BaseParallelWrapper):
 
     def step(self, actions, agent_type, episode = 0):
         next_observation, _, env_done, _, info = self.env.step(actions)
-        if episode%100 == 0:
-            print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}, observation -> {next_observation}")
+        # print(f"actions -> {actions}, agent_type -> {agent_type}, episode -> {episode}, current obs -> {self.observation}, next obs -> {next_observation}")
 
         # getting the output of the detectors
         true_propositions = self.env._get_events()
@@ -109,7 +120,7 @@ class RewardMachineEnv(BaseParallelWrapper):
                                                                                                                                     true_propositions)
                 
                 # saving information for generating counterfactual experiences
-                self.crm_params[agent_id] = self.observation, actions[agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+                self.crm_params[agent_id] = self.observation, (actions[agent_id],), next_observation, reward_machine_dones[agent_id], true_propositions
 
         elif agent_type == 'minmax':
 
@@ -124,7 +135,7 @@ class RewardMachineEnv(BaseParallelWrapper):
                 # print(f"agent_id: {agent_id}, true_propositions: {true_propositions}, rm_state_id: {self.current_rm_state_ids} ")
                 
                 # saving information for generating counterfactual experiences
-                self.crm_params[agent_id] = self.observation, actions[agent_id], actions[other_agent_id], next_observation, reward_machine_dones[agent_id], true_propositions
+                self.crm_params[agent_id] = self.observation, (actions[agent_id], actions[other_agent_id]), next_observation, reward_machine_dones[agent_id], true_propositions
 
         elif agent_type == 'human':
             for agent_id, agent_rm in self.id_to_reward_machine.items():
