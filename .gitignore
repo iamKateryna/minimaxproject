@@ -11,6 +11,6 @@ wandb/
 envs/simple_adversary/
 
 plot.py
-run.py
 utils.py
 test_agents.py
+office_world_mini.py
