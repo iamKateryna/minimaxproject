@@ -1,9 +1,9 @@
 import random
-from math import isclose
+from math import isclose, log
 import numpy as np
 
 class MinMaxQLearningAgent:
-    def __init__(self, action_space, learning_rate=0.2, discount_factor=0.9, exploration_rate=0.95, min_epsilon = 0.2, decay_rate = 0.9995, q_init=2, q_table = None) -> None:
+    def __init__(self, action_space, learning_rate=0.2, discount_factor=0.9, exploration_rate=0.95, min_epsilon = 0.2, decay_rate = 0.9995, q_init=2, q_table = None, total_timesteps = 1000000) -> None:
         self.lr = learning_rate
         self.gamma = discount_factor
         self.epsilon = exploration_rate
@@ -20,15 +20,17 @@ class MinMaxQLearningAgent:
         else:
             self.q_table = q_table
 
+        self.total_timesteps = total_timesteps
+
     
     def decay_epsilon(self):
-        # Update epsilon using exponential decay
-        # self.epsilon = max(self.min_epsilon, self.epsilon * self.decay_rate)
-        self.epsilon = max(self.epsilon - ((1-0.2)/40000000), self.min_epsilon)
+        decay = 10**(log(0.01,10)/self.total_timesteps)
+        self.epsilon = max(self.epsilon * decay, self.min_epsilon)
 
 
     def decay_lr(self):
-        self.lr = max(self.lr*0.99999954, 0.01)
+        decay = 10**(log(0.01,10)/self.total_timesteps)
+        self.lr = max(self.lr*decay, 0.01) 
 
 
     def get_qvalue(self, state, own_action, opponent_action):
@@ -76,14 +78,10 @@ class MinMaxQLearningAgent:
 
 
     def get_action(self, state, episode = None):
-        
-        # self.decay_epsilon()
-
         # Exploration vs exploitation tradeof
         if random.random() < self.epsilon:
             return random.choice(range(self.own_action_space.n))
         else:
-            # print(f"Exploitation")
             return self.get_policy(state)
 
 
@@ -100,7 +98,12 @@ class MinMaxQLearningAgent:
                     self.q_table[state][action][opponent_action] = self.q_init
 
     def learn(self, experience):
-        for state, own_action, opponent_action, reward, next_state, done in experience:
+        # print(f"\n learn()\nexperience -> {experience}")
+        i = 0
+        for state, (own_action, opponent_action), reward, next_state, done in experience:
+            
+            # print(f"\n crm round {i}")
+            # print(f"Inside learn(): State -> {state}, own_action -> {own_action}, opponent_action -> {opponent_action}\n")
 
             # check if next_state is in q_table
             if next_state not in self.q_table:
@@ -116,10 +119,12 @@ class MinMaxQLearningAgent:
                 value = reward + self.gamma * self.get_value(next_state)
 
             current_q = self.get_qvalue(state, own_action, opponent_action) # q_value of our action action at state state
-
+            # print(f"self.q_table[state][own_action]: {self.q_table[state][own_action]} ")
             # print(f"self.q_table[state][own_action][opponent_action]: {self.q_table[state][own_action][opponent_action]} ")
             
             self.q_table[state][own_action][opponent_action] += self.lr * (value - current_q)
+
+            i+=1
             
         self.decay_lr()
 

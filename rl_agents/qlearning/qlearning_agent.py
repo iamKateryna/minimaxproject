@@ -78,7 +78,7 @@ class QLearningAgent:
 
     # experience = [(state, action, reward, next_state, done) (state, action, reward, next_state, done), ...]
     def learn(self, experience):
-        for state, action, reward, next_state, done in experience:
+        for state, (action, ), reward, next_state, done in experience:
             if state not in self.q_table:
                 self.init_q_values(state)
             
