@@ -19,7 +19,7 @@ from utils import setup_logger
 import rm_constants
 
 
-def main(filename, details, algorithms, agent_0_type, agent_1_type, q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, agents_can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq):
+def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_prey, q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, agents_can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq):
     wandb.init(
         name=filename,
         project="minimaxQRM",
@@ -33,7 +33,8 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, q_init, lear
             "coffee_type": coffee_type,
             "agents_can_be_in_same_cell": agents_can_be_in_same_cell,
             "total_timesteps": total_timesteps, 
-            "max_episode_length": max_episode_length
+            "max_episode_length": max_episode_length,
+            "predator_prey": predator_prey,
         }
     )
 
@@ -48,14 +49,14 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, q_init, lear
     job_id = os.environ.get("SLURM_JOB_ID", "N/A")
     logging.info(f"job ID -> {job_id}")
 
-    office_env = OfficeWorldEnv(map_object=map_object, map_type=map_type, coffee_type=coffee_type, agents_can_be_in_same_cell=agents_can_be_in_same_cell)
+    office_env = OfficeWorldEnv(map_object=map_object, map_type=map_type, coffee_type=coffee_type, predator_prey = predator_prey, agents_can_be_in_same_cell=agents_can_be_in_same_cell)
     rm_env = RewardMachineEnv(office_env, reward_machine_files)
     env = RewardMachineWrapper(rm_env, add_crms=use_crms)
 
      
     action_space = office_env.primary_agent.action_space
     
-    agent_types = [agent_0_type, agent_1_type]
+    agent_types = (agent_0_type, agent_1_type)
     agent_ids = office_env.all_agents
     learning_agents = {}
 
@@ -68,10 +69,6 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, q_init, lear
             learning_agents[agent_id] = RandomAgent(action_space)
     
     logging.info(f"Agents -> {agent_types}")
-
-    # learning_agents = {office_env.possible_agents[0]: QLearningAgent(action_space, q_init=q_init, learning_rate=learning_rate, discount_factor=discount_factor),
-    #                    office_env.possible_agents[1]: RandomAgent(action_space)}
-
     logging.info(f"USE CRM: {use_crms}, MAP: {map_object}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}")
     logging.info(f"lr -> {learning_rate}, q_init -> {q_init}, discount_factor -> {discount_factor}")
     print(f"\nUSE CRM: {use_crms}, MAP: {map_object}, TOTAL TIMESTEPS/EPISODE: {total_timesteps}")
@@ -222,13 +219,18 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, q_init, lear
 
 
 if __name__ == '__main__':
-    timestamp = datetime.now().strftime("%m%d_%H%M")
 
-    use_crms = (False, False)
+    # RM files and map configurations
+    predator_prey = False
+    rm_list = rm_constants.MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES
+
+    map_object = MapCollection.MAP_4_OBJECTS
     map_type = "simplified" # or "base"
     can_be_in_same_cell = False
     coffee_type = "single" # "unlimited" or "single", pay attention at the rm_files
 
+    # training algorithms
+    use_crms = (False, False)
     # agent_types = ("minmax", "qlearning") # "minmax" or "qlearning" or "random"
     # agent_types = ("qlearning", "minmax")
     agent_types = ("minmax", "minmax")
@@ -236,16 +238,23 @@ if __name__ == '__main__':
     # agent_types = ("qlearning", "random")
     # agent_types = ("qlearning", "qlearning")
 
+    #training details
     total_timesteps=1000000
     max_episode_length=1000
     print_freq = 10000
 
-    exploration_rate = 0.2
-
-    q_init = 2 # do not change
+    q_init = 2
     learning_rate = 1
     discount_factor = 0.8
- 
+    exploration_rate = 0.2
+
+    # details of the training to capture in .log file name
+    details = "-debug"
+    
+    # do not change
+    map_number = rm_list[0]
+    reward_machine_files = rm_list[1:]
+
     if use_crms[0]:
         algorithm_a1 = "qrm"
     else:
@@ -256,14 +265,7 @@ if __name__ == '__main__':
     else:
         algorithm_a2 = "qlearning"
 
-    details = "-debug"
-    
-    rm_list = rm_constants.MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES
-    map_number = rm_list[0]
-    map_object = MapCollection.MAP_4_OBJECTS
-    reward_machine_files = rm_list[1:]
-
+    # name of the .log file
     filename = f"logs/1902/map{map_number}-{agent_types[0]}-vs-{agent_types[1]}-agents-{algorithm_a1}-{algorithm_a2}-{coffee_type}-{can_be_in_same_cell}{details}.log"
-    # filename = f"logs/1402/debug-10m.log"
 
-    main(filename, details, (algorithm_a1, algorithm_a2), agent_types[0], agent_types[1], q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq)
+    main(filename, details, (algorithm_a1, algorithm_a2), agent_types[0], agent_types[1], predator_prey. q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq)
