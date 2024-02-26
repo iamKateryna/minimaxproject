@@ -54,10 +54,10 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent], agent_id) -> Agent:
         x, y = self.office_world.generate_coordinates()
-        if agent_id == 2:
-            x, y = 7, 0
-        else:
-            x, y = 7, 0
+        # if agent_id == 2:
+        #     x, y = 6, 5
+        # else:
+        #     x, y = 7, 0
 
         return agent_class(x, y)
 
