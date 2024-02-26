@@ -16,7 +16,7 @@ from reward_machines.reward_machine_wrapper import RewardMachineWrapper
 from envs.officeWorld.map_collection import MapCollection
 from utils import setup_logger
 
-import rm_constants
+import reward_machines.rm_constants as rm_constants
 
 
 def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_prey, q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, agents_can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq):
@@ -96,7 +96,7 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_pre
         num_episodes+=1
 
         while not done and num_steps_per_episode < max_episode_length:
-            # print(f"State training loop -> {state}")
+            print(f"State training loop -> {state}") 
             num_steps_per_episode += 1
             actions_to_execute = {}
 
@@ -118,7 +118,7 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_pre
 
 
             next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute, agent_type = "minmax", episode = num_episodes)
-            # print(f"Next state training loop -> {next_state}")
+            print(f"Next state training loop -> {next_state}")
             done = any(done.values())
 
             # Updating the q-values
@@ -169,12 +169,18 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_pre
                 broken_decorations_score[agent2] +=1
             if "g1" in true_propositions and rm_state[agent1] == 4:
                 wins_total[agent1] += 1
-            if "g2" in true_propositions and rm_state[agent2] == 4:
-                wins_total[agent2] += 1
             if ("f1" or "h1") in true_propositions:
                 picked_coffees[agent1] += 1
             if ("f2" or "h2") in true_propositions:
                 picked_coffees[agent2] += 1
+
+            if predator_prey:
+                if "t" in true_propositions:
+                    wins_total[agent2] += 1
+            else:
+                if "g2" in true_propositions and rm_state[agent2] == 4:
+                    wins_total[agent2] += 1
+
 
             if print_freq and num_steps % print_freq == 0:
                 logging.info(f"True props -> {true_propositions}")
@@ -194,7 +200,7 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_pre
                     "picked_coffees_a2": picked_coffees[agent_ids[1]],
                     "broken_decorations_a2": broken_decorations_score[agent_ids[1]],
 
-                    "epsilon": epsilon,
+                    "exploration_rate": epsilon,
                     "details": details,
                     "learning_rate": learning_rate,
                     "discount_factor": discount_factor,
@@ -221,16 +227,16 @@ def main(filename, details, algorithms, agent_0_type, agent_1_type, predator_pre
 if __name__ == '__main__':
 
     # RM files and map configurations
-    predator_prey = False
+    predator_prey = True
     rm_list = rm_constants.MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES
 
     map_object = MapCollection.MAP_4_OBJECTS
     map_type = "simplified" # or "base"
-    can_be_in_same_cell = False
+    can_be_in_same_cell = False # if predator_prey == True, can_be_in_same_cell always true, even if you choose here False
     coffee_type = "single" # "unlimited" or "single", pay attention at the rm_files
 
     # training algorithms
-    use_crms = (False, False)
+    use_crms = (True, True)
     # agent_types = ("minmax", "qlearning") # "minmax" or "qlearning" or "random"
     # agent_types = ("qlearning", "minmax")
     agent_types = ("minmax", "minmax")
@@ -245,11 +251,11 @@ if __name__ == '__main__':
 
     q_init = 2
     learning_rate = 1
-    discount_factor = 0.8
+    discount_factor = 0.95
     exploration_rate = 0.2
 
     # details of the training to capture in .log file name
-    details = "-debug"
+    details = "-debug-disc-095-random-location-updated-tracking"
     
     # do not change
     map_number = rm_list[0]
@@ -265,7 +271,12 @@ if __name__ == '__main__':
     else:
         algorithm_a2 = "qlearning"
 
-    # name of the .log file
-    filename = f"logs/1902/map{map_number}-{agent_types[0]}-vs-{agent_types[1]}-agents-{algorithm_a1}-{algorithm_a2}-{coffee_type}-{can_be_in_same_cell}{details}.log"
+    if predator_prey:
+        kind = "predator_prey"
+    else:
+        kind = "same_goal"
 
-    main(filename, details, (algorithm_a1, algorithm_a2), agent_types[0], agent_types[1], predator_prey. q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq)
+    # name of the .log file
+    filename = f"logs/1902/map{map_number}-{kind}-{agent_types[0]}-vs-{agent_types[1]}-agents-{algorithm_a1}-{algorithm_a2}-{coffee_type}-{can_be_in_same_cell}{details}.log"
+
+    main(filename, details, (algorithm_a1, algorithm_a2), agent_types[0], agent_types[1], predator_prey, q_init, learning_rate, discount_factor, exploration_rate, use_crms, map_object, map_type, coffee_type, can_be_in_same_cell, reward_machine_files, map_number, total_timesteps, max_episode_length, print_freq)

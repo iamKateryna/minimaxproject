@@ -1,4 +1,4 @@
-import rm_constants
+import reward_machines.rm_constants as rm_constants
 from envs.officeWorld.map_collection import MapCollection
 
 from envs.officeWorld.office_world_env import OfficeWorldEnv
