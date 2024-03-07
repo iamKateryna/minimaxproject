@@ -77,8 +77,6 @@ def initialize_experiment(config, filename, my_group):
     
     return policy_path
 
-
-
 def main(filename, my_group, details, config):
 
     policy_path = initialize_experiment(config, filename, my_group)
@@ -87,18 +85,6 @@ def main(filename, my_group, details, config):
     action_space = office_env.primary_agent.action_space
     agent_ids = office_env.all_agents
     learning_agents = initialize_agents(config.agent_types, agent_ids, action_space, config)
-
-    scores = {
-        "reward_total": {agent_id: 0 for agent_id in agent_ids},
-        "wins_total": {agent_id: 0 for agent_id in agent_ids},
-        "broken_decorations_score": {agent_id: 0 for agent_id in agent_ids},
-        "picked_coffees": {agent_id: 0 for agent_id in agent_ids},
-
-        "reward_per_print" : {agent_id: 0 for agent_id in agent_ids},
-        "wins_per_print" : {agent_id: 0 for agent_id in agent_ids},
-        "decorations_per_print" : {agent_id: 0 for agent_id in agent_ids},
-        "coffees_per_print" : {agent_id: 0 for agent_id in agent_ids},
-    }
 
     reward_total = {agent_id: 0 for agent_id in agent_ids}
     wins_total = {agent_id: 0 for agent_id in agent_ids}
