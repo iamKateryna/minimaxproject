@@ -32,17 +32,25 @@ Note: MAP_2 RMs refer to RMs for maps with decorations, MAP_3 RMs refer to RMs f
 
 To run the experiments, run:
 ```bash
-    python play_different_agents.py
+    python train_agents.py
 ```
 
-Configurations for now are inside the file.
+Training configurations are in `training_configurations.py`.
 
+To evaluate policies against other agents, run:
+```bash
+    python evaluate_agents.py
+```
+Evaluation configurations are in `evaluation_configurations.py`.
+
+
+### Configurations details:
 - `predator_prey: bool`, True - predator_prey option (where agent 2's task is to catch agent 1 while it delivers coffee to the office), False - both agents' task is to deliver coffee to the office.
-- `map_type: "simplified" or "base"`, simplified - 6 by 9, base - 12 by 9
+- `map_type: MapType.SIMPLIFIED or MapType.BASE`, simplified - 6 by 9, base - 12 by 9
 - `use_crms: (bool, bool)`, True - add crm, False - do not add crm
 - `can_be_in_same_cell: bool`, True - can, False - cannot
-- `coffee_type: "unlimited" or "single"` , pay attention at the rm_files to choose corresponding ones, single - one coffee per coffee machine
-- `agent_types = (str, st)`, "minmax" or "qlearning" or "random"
+- `coffee_type: CoffeeType.SINGLE or CoffeeType.UNLIMITED`, single - one coffee per coffee machine
+- `agent_types = (AgentType, AgentType)`, AgentType.MINMAX or AgentType.QLEARNING or AgentType.RANDOM
 - `total_timesteps: int`, total number of steps
 - `max_episode_length: int`, upper booundary for the episode length (in timesteps)
 - `print_freq: int`, print/log frequency of the progress
@@ -51,4 +59,7 @@ Configurations for now are inside the file.
 - `learning_rate: float`
 - `discount_factor: float`
 - `exploration_rate: float`
+- `exploration_decay_after: ExplorationDecay.EPISODE or ExplorationDecay.STEP`, specifies when the exploration rate should decay: either after each episode (ExplorationDecay.EPISODE) or after each step (ExplorationDecay.STEP)
+- `n_episodes_for_decay: int`, the number of episodes over which to exponentially decay the exploration rate. If exploration_decay_after is set to ExplorationDecay.STEP, then the exploration rate is decayed exponentially over 70% of the total_timesteps.
+- `group: str`, details, used to group runs in wandb
 - `details: str`, details of the training to capture in .log file name and run name in wandb
