@@ -62,3 +62,35 @@ class MapCollection:
         (4, 4): OfficeWorldObjects.PLANT,
         (7, 4): OfficeWorldObjects.PLANT,
     }
+
+    MAP_7_OBJECTS: dict[tuple[int, int], str] = {
+        (3, 0): OfficeWorldObjects.COFFEE_1, # add second coffee sign
+        (5, 0): OfficeWorldObjects.COFFEE_2, # add second coffee sign
+        (4, 4): OfficeWorldObjects.OFFICE,
+        (1, 4): OfficeWorldObjects.PLANT,
+        (1, 1): OfficeWorldObjects.PLANT,
+        (7, 1): OfficeWorldObjects.PLANT,
+        (4, 1): OfficeWorldObjects.PLANT,
+    }
+
+
+    MAP_8_OBJECTS: dict[tuple[int, int], str] = {
+        (3, 0): OfficeWorldObjects.COFFEE_1, # add second coffee sign
+        (5, 0): OfficeWorldObjects.COFFEE_2, # add second coffee sign
+        (4, 4): OfficeWorldObjects.OFFICE,
+        (1, 4): OfficeWorldObjects.PLANT,
+        # (1, 1): OfficeWorldObjects.PLANT, suiside prevention program
+        (7, 4): OfficeWorldObjects.PLANT,
+        (4, 1): OfficeWorldObjects.PLANT,
+    }
+
+
+    MAP_9_OBJECTS: dict[tuple[int, int], str] = {
+        (3, 2): OfficeWorldObjects.COFFEE_1, # add second coffee sign
+        (5, 0): OfficeWorldObjects.COFFEE_2, # add second coffee sign
+        (4, 4): OfficeWorldObjects.OFFICE,
+        (1, 4): OfficeWorldObjects.PLANT,
+        (1, 1): OfficeWorldObjects.PLANT,
+        (7, 1): OfficeWorldObjects.PLANT,
+        (4, 1): OfficeWorldObjects.PLANT,
+    }

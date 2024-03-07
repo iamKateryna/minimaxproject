@@ -13,6 +13,9 @@ MAP_2_RM_COMPLETED_TASK_HIGHER_REWARD_2_DIFFERENT_COFFEES = [2, f"{RM_PATH_PREFI
 MAP_2_RM_ORIGINAL_REWARDS_2_DIFFERENT_COFFEES = [2, f"{RM_PATH_PREFIX}m2_original_rewards_2_different_coffees{A1_SUFFIX}.txt", f"{RM_PATH_PREFIX}m2_original_rewards_2_different_coffees{A2_SUFFIX}.txt"] # add second coffee sign
 MAP_2_RM_BROKEN_DEC_HIGHER_PENALTY_2_DIFFERENT_COFFEES = [2, f"{RM_PATH_PREFIX}m2_broken_dec_higher_penalty_2_different_coffees{A1_SUFFIX}.txt", f"{RM_PATH_PREFIX}m2_broken_dec_higher_penalty_2_different_coffees{A2_SUFFIX}.txt"] # add second coffee sign
 
+# allow stealing coffee
+MAP_2_STEALING = [2, f"{RM_PATH_PREFIX}m2_stealing_mode_2_different_coffees{A1_SUFFIX}.txt", f"{RM_PATH_PREFIX}m2_stealing_mode_2_different_coffees{A2_SUFFIX}.txt"]
+
 # when one agent dies, another continues the game
 MAP_2_SEPARATE_DEATHS = [2, f"{RM_PATH_PREFIX}m2_separate_deaths{A1_SUFFIX}.txt", f"{RM_PATH_PREFIX}m2_separate_deaths{A2_SUFFIX}.txt"]
 

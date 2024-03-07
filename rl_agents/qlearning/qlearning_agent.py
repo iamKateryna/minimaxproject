@@ -1,31 +1,20 @@
 import random
 import math
 
+from ..base.base_agent import BaseAgent
 
-class QLearningAgent:
-    def __init__(self, action_space, learning_rate=0.5, discount_factor=0.9, exploration_rate=0.95, min_epsilon = 0.2, decay_rate = 0.9995, q_init=2, q_table=None):
+class QLearningAgent(BaseAgent):
+    def __init__(self, action_space, learning_rate=0.5, discount_factor=0.9, exploration_rate=0.5, q_init=2, q_table={}):
         self.lr = learning_rate
         self.gamma = discount_factor
         self.epsilon = exploration_rate
         self.q_init = q_init # initial q-value for unseen states
         self.action_space = action_space
-        self.min_epsilon = min_epsilon
-        self.decay_rate = decay_rate
 
-        if not q_table:
-            self.q_table = {}
-        else:
-            self.q_table = q_table
+        self.q_table = q_table
 
-
-    def decay_lr(self):
-        self.lr = max(self.lr*0.9999954, 0.01)
-
-
-    def decay_epsilon(self):
-        # Update epsilon using exponential decay
-        # self.epsilon = max(self.min_epsilon, self.epsilon * self.decay_rate)
-        self.epsilon = max(self.epsilon - ((1-0.0001)/100000000), self.min_epsilon)
+        # calculate how ofthen an agent visins different states
+        self.update_counts = {}
 
     
     def get_qvalue(self, state, action):
@@ -63,9 +52,7 @@ class QLearningAgent:
         return best_actions[0]
 
     # returns action for state state
-    def get_action(self, state, episode = None):
-        # if episode and episode%5:
-        # self.decay_epsilon()
+    def get_action(self, state):
         if random.random() < self.epsilon:
             # return random.choice([action for action in range(self.action_space.n)])
             return random.choice(range(self.action_space.n))
@@ -75,10 +62,16 @@ class QLearningAgent:
     
     def init_q_values(self, state):
         self.q_table[state] = {action: self.q_init for action in range(self.action_space.n)}
+        self.update_counts[state] = {action: 0 for action in range(self.action_space.n)}
 
     # experience = [(state, action, reward, next_state, done) (state, action, reward, next_state, done), ...]
     def learn(self, experience):
+        i = 0
         for state, (action, ), reward, next_state, done in experience:
+
+            # print(f"\n crm round {i}")
+            # print(f"Inside learn(): State -> {state}, actions -> {action}, Next state -> {next_state}")
+
             if state not in self.q_table:
                 self.init_q_values(state)
             
@@ -101,8 +94,8 @@ class QLearningAgent:
             # print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
             self.q_table[state][action] += self.lr * (value - q_value)
             # print(f"self.q_table[state] -> {self.q_table[state]}")
-
-        self.decay_lr()
+            i+=1
+            self.update_counts[state][action] +=1
 
     def name(self):
         return 'qlearning'
