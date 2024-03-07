@@ -6,11 +6,13 @@ logs/
 plots/
 archive/
 policies/
+new_policies/
+extra-policies/
 scripts/
 wandb/
 envs/simple_adversary/
 
 plot.py
 utils.py
-test_agents.py
 office_world_mini.py
+visited_states_analysis.py
