@@ -6,7 +6,7 @@ from rl_agents.random.random_agent import RandomAgent
 from rl_agents.minmax_qlearning.minmax_agent import MinMaxQLearningAgent
 from rl_agents.qlearning.qlearning_agent import QLearningAgent
 
-from envs.officeWorld.office_world_env import OfficeWorldEnv
+from envs.office_world.office_world_env import OfficeWorldEnv
 from reward_machines.reward_machine_environment import RewardMachineEnv
 from reward_machines.reward_machine_wrapper import RewardMachineWrapper
 
@@ -41,11 +41,11 @@ def initialize_agents(agent_types, agent_ids, action_space, config):
     return agents
 
 
-def initialize_experiment(config, filename, my_group):
+def initialize_experiment(config):
     wandb.init(
-        name=filename[10:-4],
+        name=config.filename[10:-4],
         project="minimaxQRM",
-        group= my_group,
+        group= config.my_group,
 
         config={
             "agent_0": f"{config.agent_types[0]}_{config.use_crms[0]}",
@@ -62,11 +62,11 @@ def initialize_experiment(config, filename, my_group):
         }
     )
 
-    policy_path = f"new_policies/{config.map_type}-{config.map_number}"
+    policy_path = f"report_policies/{config.map_type}-{config.map_number}"
     if not os.path.exists(policy_path):
         os.makedirs(policy_path)
 
-    setup_logger(filename)
+    setup_logger(config.filename)
 
     job_id = os.environ.get("SLURM_JOB_ID", "N/A")
     logging.info(f"job ID -> {job_id}")
@@ -77,9 +77,9 @@ def initialize_experiment(config, filename, my_group):
     
     return policy_path
 
-def main(filename, my_group, details, config):
+def main(config):
 
-    policy_path = initialize_experiment(config, filename, my_group)
+    policy_path = initialize_experiment(config)
 
     office_env, env = setup_environment(config)
     action_space = office_env.primary_agent.action_space
@@ -198,7 +198,7 @@ def main(filename, my_group, details, config):
                 coffees_per_print[agent2] += 1
                 logging.info('("f2" or "h2") in true_propositions')
             if config.predator_prey:
-                if "t" in true_propositions:
+                if ("t" in true_propositions) and rewards[agent2] == 1: # only if catches agent_1 with coffee
                     wins_total[agent2] += 1
                     wins_per_print[agent2] += 1
                     logging.info('a win is a win -> t')
@@ -247,7 +247,7 @@ def main(filename, my_group, details, config):
                     "decoration_pp_a2": decorations_per_print[agent_ids[1]],
 
                     "exploration_rate": epsilon,
-                    "details": details,
+                    "details": config.details,
                     "learning_rate": learning_rate,
                     "discount_factor": config.discount_factor,
 
@@ -260,11 +260,11 @@ def main(filename, my_group, details, config):
                 # num_episodes = 0
     
     # save policies
-    if details == '-record-policy-':
+    if config.details == '-record-policy-':
         for agent_id in agent_ids:
             if isinstance(learning_agents[agent_id], MinMaxQLearningAgent) or isinstance(learning_agents[agent_id], QLearningAgent):
-                filename = f"{policy_path}/{filename[10:-4]}-{agent_id}-policy.pkl"
-                learning_agents[agent_id].save_policy(filename)
+                policy = f"{policy_path}/{config.filename[10:-4]}-{agent_id}-policy.pkl"
+                learning_agents[agent_id].save_policy(policy)
      
     # logging.info(f"q_table counts A1-> {learning_agents[agent_ids[0]].update_counts}")
     # with open(f"{filename[:-4]}-a1.pkl", "wb") as file:
@@ -276,13 +276,4 @@ def main(filename, my_group, details, config):
 if __name__ == '__main__':
 
     config = TrainingConfig()
-    # details of the training to capture in .log file name
-    my_group = f"new_loc-150k-mmqrm-vs-mmqrm-map9-longer"
-    # my_group = ""
-    details = "-record-policy-"
-    # details = "-1-"
-    # name of the .log file
-    name = f"{config.kind}-{my_group}{details}map{config.map_number}-{config.agent_types[0]}-{config.algorithms[0]}-vs-{config.agent_types[1]}-{config.algorithms[1]}-{config.exploration_decay_after}-{config.coffee_type}-same_cell-{config.can_be_in_same_cell}"
-    filename = f"logs/0603/{name}.log"
-
-    main(filename, my_group, details, config)
+    main(config)

@@ -6,7 +6,7 @@ from rl_agents.random.random_agent import RandomAgent
 from rl_agents.minmax_qlearning.minmax_agent import MinMaxQLearningAgent
 from rl_agents.qlearning.qlearning_agent import QLearningAgent
 
-from envs.officeWorld.office_world_env import OfficeWorldEnv
+from envs.office_world.office_world_env import OfficeWorldEnv
 from reward_machines.reward_machine_environment import RewardMachineEnv
 from reward_machines.reward_machine_wrapper import RewardMachineWrapper
 
@@ -30,23 +30,21 @@ def initialize_agents(agent_types, agent_ids, action_space, config):
     agents = {}
     for agent_type, agent_id in zip(agent_types, agent_ids):
         if agent_type.value == "minmax":
-            agents[agent_id] = MinMaxQLearningAgent(action_space, q_table = config.q_tables[agent_id], q_init=config.q_init, exploration_rate=config.exploration_rate)
+            agents[agent_id] = MinMaxQLearningAgent(action_space, exploration_rate=config.exploration_rate, q_init=config.q_init, q_table = config.q_tables[agent_id])
         elif agent_type.value == "qlearning":
-            agents[agent_id] = QLearningAgent(action_space, q_table = config.q_tables[agent_id], q_init=config.q_init, exploration_rate=config.exploration_rate)
+            agents[agent_id] = QLearningAgent(action_space, exploration_rate=config.exploration_rate, q_init=config.q_init, q_table = config.q_tables[agent_id])
         elif agent_type.value == "random":
             agents[agent_id] = RandomAgent(action_space)
         else:
             raise ValueError(f"Unsupported agent type: {agent_type}")
     return agents
 
-
-def main(filename, my_group, details, config):
-    # wandb.init(project="minimaxQRM", name=filename[10:-4], group=my_group, config=config.to_dict())
+def initialize_evaluation(config):
 
     wandb.init(
-        name=filename[10:-4],
+        name=config.filename[10:-4],
         project="minimaxQRM",
-        group= my_group,
+        group= config.my_group,
 
         config={
             "agent_0": f"{config.agent_types[0]}_{config.use_crms[0]}",
@@ -62,7 +60,7 @@ def main(filename, my_group, details, config):
         }
     )
 
-    setup_logger(filename)
+    setup_logger(config.filename)
 
     job_id = os.environ.get("SLURM_JOB_ID", "N/A")
     logging.info(f"job ID -> {job_id}")
@@ -70,6 +68,10 @@ def main(filename, my_group, details, config):
     logging.info(f"MAP: {config.map_object}, TOTAL TIMESTEPS/EPISODE: {config.total_timesteps}")
     logging.info(f"Policies paths -> {config.q_tables}")
 
+
+def main(config):
+
+    initialize_evaluation(config)
 
     office_env, env = setup_environment(config)
     action_space = office_env.primary_agent.action_space
@@ -89,7 +91,6 @@ def main(filename, my_group, details, config):
 
     stolen_coffees = 0
 
-    # episode_metrics = initialize_episode_metrics(agent_ids)
     num_steps = 0
     num_episodes = 0
 
@@ -113,6 +114,7 @@ def main(filename, my_group, details, config):
                     if agent_state not in agent.q_table:
                         agent.init_q_values(agent_state)
 
+                print(f"agent state: {agent_state}")
                 action = agent.get_action(agent_state)
                 actions_to_execute[agent_id] = action
 
@@ -198,7 +200,7 @@ def main(filename, my_group, details, config):
                     "coffee_pp_a2": coffees_per_print[agent_ids[1]],
                     "decoration_pp_a2": decorations_per_print[agent_ids[1]],
 
-                    "details": details,
+                    "details": config.details,
 
                 })
 
@@ -211,13 +213,5 @@ def main(filename, my_group, details, config):
 if __name__ == '__main__':
 
     config = EvaluateConfig()
-    # details of the training to capture in .log file name
-    my_group = f"eval-qrm-vs-qrm"
-    # my_group = ""
-    details = "-test-"
-    # name of the .log file
-    name = f"{my_group}{details}map{config.map_number}-{config.kind}-{config.coffee_type}-{config.can_be_in_same_cell}"
-    filename = f"logs/0603/{name}.log"
-
-    main(filename, my_group, details, config)
+    main(config)
  
