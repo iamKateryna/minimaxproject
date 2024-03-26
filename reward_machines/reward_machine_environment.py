@@ -1,6 +1,5 @@
 from pettingzoo.utils import BaseParallelWrapper
 from .reward_machine import RewardMachine
-from envs.officeWorld.value_iteration import value_iteration
 
 from gymnasium import spaces
 import numpy as np
@@ -158,9 +157,7 @@ class RewardMachineEnv(BaseParallelWrapper):
         # return true_propositions and self.current_rm_state_ids for tracking progress
         return reward_machine_observations, reward_machine_rewards, done, info, true_propositions, self.current_rm_state_ids
     
-    
     # add RM state to the observation
-
     def get_observation(self, observation, agent_id, rm_state_id, reward_machine_done):
 
 
@@ -247,43 +244,3 @@ class RewardMachineEnv(BaseParallelWrapper):
         else:
             raise NotImplementedError
         
-    # def test_optimal_policies(self, num_episodes, epsilon, gamma):
-    #     """
-    #     This code computes optimal policies for each reward machine and evaluates them using epsilon-greedy exploration
-
-    #     PARAMS
-    #     ----------
-    #     num_episodes(int): Number of evaluation episodes
-    #     epsilon(float):    Epsilon constant for exploring the environment
-    #     gamma(float):      Discount factor
-
-    #     RETURNS
-    #     ----------
-    #     List with the optimal average-reward-per-step per reward machine
-    #     """
-    #     S,A,L,T = self.env.get_model()
-    #     print("\nComputing optimal policies... ", end='', flush=True)
-    #     optimal_policies = [value_iteration(S,A,L,T,reward_machine,gamma) for reward_machine in self.reward_machines]
-    #     print("Done!")
-    #     optimal_ARPS = [[] for _ in range(len(optimal_policies))]
-    #     print("\nEvaluating optimal policies.")
-    #     for ep in range(num_episodes):
-    #         if ep % 100 == 0 and ep > 0:
-    #             print("%d/%d"%(ep,num_episodes))
-    #         self.reset()
-    #         s = tuple(self.obs)
-    #         u = self.current_u_id
-    #         rm_id = self.current_rm_id
-    #         rewards = []
-    #         done = False
-    #         while not done:
-    #             a = random.choice(A) if random.random() < epsilon else optimal_policies[rm_id][(s,u)]
-    #             _, r, done, _ = self.step(a)
-    #             rewards.append(r)
-    #             s = tuple(self.obs)
-    #             u = self.current_u_id
-    #         optimal_ARPS[rm_id].append(sum(rewards)/len(rewards))
-    #     print("Done!\n")
-
-    #    return [sum(arps)/len(arps) for arps in optimal_ARPS]
- 

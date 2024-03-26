@@ -2,17 +2,13 @@
 .vscode/
 .DS_Store
 __pycache__
-logs/
-plots/
+
 archive/
 policies/
-new_policies/
-extra-policies/
-scripts/
+report_policies/
+logs/
 wandb/
-envs/simple_adversary/
 
-plot.py
-utils.py
-office_world_mini.py
-visited_states_analysis.py
+train_simple_push.py
+reward_machines/mpe/simple_tag/
+
