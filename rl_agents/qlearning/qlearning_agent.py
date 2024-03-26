@@ -54,7 +54,6 @@ class QLearningAgent(BaseAgent):
     # returns action for state state
     def get_action(self, state):
         if random.random() < self.epsilon:
-            # return random.choice([action for action in range(self.action_space.n)])
             return random.choice(range(self.action_space.n))
         else:
             return self.get_policy(state)
@@ -62,7 +61,7 @@ class QLearningAgent(BaseAgent):
     
     def init_q_values(self, state):
         self.q_table[state] = {action: self.q_init for action in range(self.action_space.n)}
-        self.update_counts[state] = {action: 0 for action in range(self.action_space.n)}
+        # self.update_counts[state] = {action: 0 for action in range(self.action_space.n)}
 
     # experience = [(state, action, reward, next_state, done) (state, action, reward, next_state, done), ...]
     def learn(self, experience):
@@ -95,7 +94,7 @@ class QLearningAgent(BaseAgent):
             self.q_table[state][action] += self.lr * (value - q_value)
             # print(f"self.q_table[state] -> {self.q_table[state]}")
             i+=1
-            self.update_counts[state][action] +=1
+            # self.update_counts[state][action] +=1
 
     def name(self):
         return 'qlearning'

@@ -14,9 +14,6 @@ class MinMaxQLearningAgent(BaseAgent):
         self.own_action_space = action_space
         self.opponent_action_space = action_space
 
-        # calculate how ofthen an agent visins different states
-        self.update_counts = {}
-
 
     def get_qvalue(self, state, own_action, opponent_action):
         return self.q_table[state][own_action][opponent_action]
@@ -38,7 +35,7 @@ class MinMaxQLearningAgent(BaseAgent):
 
     
     def get_policy(self, state):
-        best_action = None
+        best_action = 0 # default action
         best_action_value = -float('inf')
 
         all_q_values = []
@@ -73,12 +70,10 @@ class MinMaxQLearningAgent(BaseAgent):
     def init_q_values(self, state):
         if state not in self.q_table:
             self.q_table[state] = {}
-            self.update_counts[state] = {}
 
         for action in range(self.own_action_space.n):
             if action not in self.q_table[state]:
                 self.q_table[state][action] = {}
-                self.update_counts[state][action] = 0
 
             for opponent_action in range(self.opponent_action_space.n):
                 if opponent_action not in self.q_table[state][action]:
@@ -87,9 +82,6 @@ class MinMaxQLearningAgent(BaseAgent):
     def learn(self, experience):
         i = 0
         for state, (own_action, opponent_action), reward, next_state, done in experience:
-            
-            # print(f"\n crm round {i}")
-            # print(f"Inside learn(): State -> {state}, actions -> {own_action},{opponent_action}, Next state -> {next_state}")
 
             # check if next_state is in q_table
             if next_state not in self.q_table:
@@ -109,7 +101,6 @@ class MinMaxQLearningAgent(BaseAgent):
             self.q_table[state][own_action][opponent_action] += self.lr * (value - current_q)
 
             i+=1
-            # self.update_counts[state][own_action] +=1
             
 
     def name(self):
