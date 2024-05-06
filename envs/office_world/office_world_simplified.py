@@ -14,12 +14,12 @@ class OfficeWorldSimlified(OfficeWorld):
 
     def _add_doors(self, location_to_forbidden_actions) -> dict[tuple[int, int], set[Actions]]:
 
-        for y in [1]:
-            for x in [5]:
-                location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
-                location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)
+        # for y in [1]:
+        #     for x in [5]:
+        #         location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
+        #         location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)
         
-        for y in [4]:
+        for y in [1, 4]:
             for x in [2, 5]:
                 location_to_forbidden_actions[(x, y)].remove(Actions.RIGHT)
                 location_to_forbidden_actions[(x + 1, y)].remove(Actions.LEFT)

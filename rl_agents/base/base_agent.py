@@ -12,9 +12,13 @@ class BaseAgent(ABC):
 
 
     def decay_epsilon(self, num_steps):
-        """Decay exploration rate for num_steps"""
+        """Decay exploration rate exponantially for num_steps"""
         decay = 10**(log(0.01,10)/num_steps)
         self.epsilon = max(self.epsilon * decay, 0.01)
+
+        """Decay exploration rate linearly for num_steps"""
+        # decrement = (1.0 - 0.01) / num_steps
+        # self.epsilon = max(self.epsilon - decrement, 0.01)
 
 
     def decay_lr(self, num_steps):

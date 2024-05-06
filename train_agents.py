@@ -6,7 +6,7 @@ from rl_agents.random.random_agent import RandomAgent
 from rl_agents.minmax_qlearning.minmax_agent import MinMaxQLearningAgent
 from rl_agents.qlearning.qlearning_agent import QLearningAgent
 
-from envs.officeWorld.office_world_env import OfficeWorldEnv
+from envs.office_world.office_world_env import OfficeWorldEnv
 from reward_machines.reward_machine_environment import RewardMachineEnv
 from reward_machines.reward_machine_wrapper import RewardMachineWrapper
 
@@ -31,9 +31,19 @@ def initialize_agents(agent_types, agent_ids, action_space, config):
     agents = {}
     for agent_type, agent_id in zip(agent_types, agent_ids):
         if agent_type.value == "minmax":
-            agents[agent_id] = MinMaxQLearningAgent(action_space, q_init=config.q_init, learning_rate=config.learning_rate, discount_factor=config.discount_factor, exploration_rate=config.exploration_rate)
+            agents[agent_id] = MinMaxQLearningAgent(action_space, 
+                                                    q_init=config.q_init, 
+                                                    learning_rate=config.learning_rate, 
+                                                    discount_factor=config.discount_factor, 
+                                                    exploration_rate=config.exploration_rate,
+                                                    policy=config.policy.value)
         elif agent_type.value == "qlearning":
-            agents[agent_id] = QLearningAgent(action_space, q_init=config.q_init, learning_rate=config.learning_rate, discount_factor=config.discount_factor, exploration_rate=config.exploration_rate)
+            agents[agent_id] = QLearningAgent(action_space, 
+                                              q_init=config.q_init, 
+                                              learning_rate=config.learning_rate, 
+                                              discount_factor=config.discount_factor, 
+                                              exploration_rate=config.exploration_rate,
+                                              policy=config.policy.value)
         elif agent_type.value == "random":
             agents[agent_id] = RandomAgent(action_space)
         else:
@@ -41,11 +51,11 @@ def initialize_agents(agent_types, agent_ids, action_space, config):
     return agents
 
 
-def initialize_experiment(config, filename, my_group):
+def initialize_experiment(config):
     wandb.init(
-        name=filename[10:-4],
+        name=config.filename[10:-4],
         project="minimaxQRM",
-        group= my_group,
+        group= config.my_group,
 
         config={
             "agent_0": f"{config.agent_types[0]}_{config.use_crms[0]}",
@@ -59,14 +69,15 @@ def initialize_experiment(config, filename, my_group):
             "predator_prey": config.predator_prey,
             "kind": config.kind,
             "map_number": config.map_number,
+            "n_episodes_for_decay": config.n_episodes_for_decay,
         }
     )
 
-    policy_path = f"new_policies/{config.map_type}-{config.map_number}"
+    policy_path = f"{config.policies_path}/{config.map_type}-{config.map_number}"
     if not os.path.exists(policy_path):
         os.makedirs(policy_path)
 
-    setup_logger(filename)
+    setup_logger(config.filename)
 
     job_id = os.environ.get("SLURM_JOB_ID", "N/A")
     logging.info(f"job ID -> {job_id}")
@@ -77,9 +88,9 @@ def initialize_experiment(config, filename, my_group):
     
     return policy_path
 
-def main(filename, my_group, details, config):
+def main(config):
 
-    policy_path = initialize_experiment(config, filename, my_group)
+    policy_path = initialize_experiment(config)
 
     office_env, env = setup_environment(config)
     action_space = office_env.primary_agent.action_space
@@ -101,7 +112,9 @@ def main(filename, my_group, details, config):
     num_steps = 0
     num_episodes = 0
 
-    while num_steps < config.total_timesteps:
+    epsilon = config.exploration_rate
+
+    while num_steps < config.total_timesteps and epsilon > config.min_exploration_rate:
         num_steps_per_episode = 0
 
         reset_env_state = env.reset()
@@ -129,8 +142,7 @@ def main(filename, my_group, details, config):
 
                     epsilon = agent.epsilon
                     learning_rate = agent.lr
-                
-                action = agent.get_action(agent_state)
+                action = agent.get_action(agent_state, num_episodes)
                 actions_to_execute[agent_id] = action
 
             next_state, rewards, done, info, true_propositions, rm_state = env.step(actions_to_execute, agent_type = "minmax", episode = num_episodes)
@@ -148,8 +160,9 @@ def main(filename, my_group, details, config):
                             experiences.append((tuple(_state), (_action, _other_agent_action), _reward, tuple(_next_state), _done))
                     else:
                         experiences = [(state[agent_id], (actions_to_execute[agent_id], actions_to_execute[other_agent_id]), rewards[agent_id], tuple(next_state[agent_id]), done)]
-                        
-                    learning_agents[agent_id].learn(experiences)
+
+                    logging.info(f"MAIN experiences agent {agent_id}: {experiences}")    
+                    learning_agents[agent_id].learn(experiences, num_episodes)
 
                 elif isinstance(learning_agents[agent_id], QLearningAgent): 
                     if config.use_crms[id]:
@@ -159,7 +172,7 @@ def main(filename, my_group, details, config):
                     else:
                         experiences = [(state[agent_id], (actions_to_execute[agent_id],), rewards[agent_id], tuple(next_state[agent_id]), done)]
                 
-                    learning_agents[agent_id].learn(experiences)
+                    learning_agents[agent_id].learn(experiences, num_episodes)
 
                 elif isinstance(learning_agents[agent_id], RandomAgent):
                     pass
@@ -167,11 +180,11 @@ def main(filename, my_group, details, config):
                     raise NotImplementedError
             
 
-            logging.info(f"Step: {num_steps}, state -> {list(state[agent_ids[0]])}, actions -> {actions_to_execute[agent_ids[0]]}, {actions_to_execute[agent_ids[1]]}, props -> {true_propositions}, rm_state: ({rm_state[agent_ids[0]]}, {rm_state[agent_ids[1]]})rew: ({rewards[agent_ids[0]]}, {rewards[agent_ids[1]]}), next state -> {next_state[agent_ids[0]]}")
+            # logging.info(f"Step: {num_steps}, state -> {list(state[agent_ids[0]])}, actions -> {actions_to_execute[agent_ids[0]]}, {actions_to_execute[agent_ids[1]]}, props -> {true_propositions}, rm_state: ({rm_state[agent_ids[0]]}, {rm_state[agent_ids[1]]})rew: ({rewards[agent_ids[0]]}, {rewards[agent_ids[1]]}), next state -> {next_state[agent_ids[0]]}")
 
             num_steps += 1
 
-            # set state <- next_state ansssd update reward_total
+            # set state <- next_state and update reward_total
             for agent_id in agent_ids:
                 state[agent_id] = tuple(next_state[agent_id])
                 reward_total[agent_id] += rewards[agent_id]
@@ -182,41 +195,46 @@ def main(filename, my_group, details, config):
             if "n1" in true_propositions and rm_state[agent1] == 4:
                 broken_decorations_score[agent1] +=1
                 decorations_per_print[agent1] +=1
+                # logging.info('n1 broc dec')
             elif (("g1" in true_propositions) and rm_state[agent1] == 4) and ("n2" not in true_propositions):
                 wins_total[agent1] += 1
                 wins_per_print[agent1] +=1
-                logging.info('a win is a win -> g1')
+                # logging.info('a win is a win -> g1')
             elif "f1" in true_propositions or "h1" in true_propositions:
                 picked_coffees[agent1] += 1
                 coffees_per_print[agent1] += 1
-                logging.info('("f1" or "h1") in true_propositions')
+                # logging.info('("f1" or "h1") in true_propositions')
 
             if "n2" in true_propositions and rm_state[agent2] == 4:
                 broken_decorations_score[agent2] +=1
+                decorations_per_print[agent2] +=1
+                # logging.info('n2 broc dec')
             elif "f2" in true_propositions or "h2" in true_propositions:
                 picked_coffees[agent2] += 1
                 coffees_per_print[agent2] += 1
-                logging.info('("f2" or "h2") in true_propositions')
+                # logging.info('("f2" or "h2") in true_propositions')
             if config.predator_prey:
-                if "t" in true_propositions:
+                # if ("t" in true_propositions) and rewards[agent2] == 1: # only if catches agent_1 with coffee
                     wins_total[agent2] += 1
                     wins_per_print[agent2] += 1
-                    logging.info('a win is a win -> t')
+                    # logging.info('a win is a win -> t')
             else:
                 if (("g2" in true_propositions) and rm_state[agent2] == 4) and ("n1" not in true_propositions):
                     wins_total[agent2] += 1
                     wins_per_print[agent2] += 1
-                    logging.info('a win is a win -> g2')
+                    # logging.info('a win is a win -> g2')
 
-            if config.allow_stealing:
-                if "t" in true_propositions:
-                    stolen_coffees += 0 
-                    logging.info("he's stealing cheese!!!")
+            # if config.allow_stealing:
+            #     if "t" in true_propositions:
+            #         stolen_coffees += 0 
+            #         logging.info("he's stealing cheese!!!")
+            # if ("t" in true_propositions):
+                # logging.info('"t" in true_propositions')
 
 
             if config.print_freq and num_steps % config.print_freq == 0:
 
-                logging.info(f"Steps: {num_steps}, Episodes: {num_episodes}, Total reward: {reward_total}, Picked coffees: {picked_coffees}, Total wins: {wins_total}, Broken decorations: {broken_decorations_score}")
+                # logging.info(f"Steps: {num_steps}, Episodes: {num_episodes}, Total reward: {reward_total}, Picked coffees: {picked_coffees}, Total wins: {wins_total}, Broken decorations: {broken_decorations_score}")
 
                 wandb.log({
                     "Steps": num_steps, 
@@ -247,7 +265,7 @@ def main(filename, my_group, details, config):
                     "decoration_pp_a2": decorations_per_print[agent_ids[1]],
 
                     "exploration_rate": epsilon,
-                    "details": details,
+                    "details": config.details,
                     "learning_rate": learning_rate,
                     "discount_factor": config.discount_factor,
 
@@ -260,29 +278,14 @@ def main(filename, my_group, details, config):
                 # num_episodes = 0
     
     # save policies
-    if details == '-record-policy-':
+    if config.save_policy:
         for agent_id in agent_ids:
             if isinstance(learning_agents[agent_id], MinMaxQLearningAgent) or isinstance(learning_agents[agent_id], QLearningAgent):
-                filename = f"{policy_path}/{filename[10:-4]}-{agent_id}-policy.pkl"
-                learning_agents[agent_id].save_policy(filename)
+                policy = f"{policy_path}/{config.filename[10:-4]}-{agent_id}-policy.pkl"
+                learning_agents[agent_id].save_policy(policy)
      
-    # logging.info(f"q_table counts A1-> {learning_agents[agent_ids[0]].update_counts}")
-    # with open(f"{filename[:-4]}-a1.pkl", "wb") as file:
-    #                         pickle.dump(learning_agents[agent_id].update_counts, file)
-    # logging.info(f"q_table counts A2 -> {learning_agents[agent_ids[1]].update_counts}")
-    # with open(f"{filename[:-4]}-a2.pkl", "wb") as file:
-    #                         pickle.dump(learning_agents[agent_id].update_counts, file)
 
 if __name__ == '__main__':
 
     config = TrainingConfig()
-    # details of the training to capture in .log file name
-    my_group = f"new_loc-150k-mmqrm-vs-mmqrm-map9-longer"
-    # my_group = ""
-    details = "-record-policy-"
-    # details = "-1-"
-    # name of the .log file
-    name = f"{config.kind}-{my_group}{details}map{config.map_number}-{config.agent_types[0]}-{config.algorithms[0]}-vs-{config.agent_types[1]}-{config.algorithms[1]}-{config.exploration_decay_after}-{config.coffee_type}-same_cell-{config.can_be_in_same_cell}"
-    filename = f"logs/0603/{name}.log"
-
-    main(filename, my_group, details, config)
+    main(config)

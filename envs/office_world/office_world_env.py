@@ -1,4 +1,5 @@
 from re import L
+import logging
 import random
 from copy import copy
 import functools
@@ -15,12 +16,13 @@ class OfficeWorldEnv(ParallelEnv):
     PRIMARY_AGENT_ID = "primary_agent"
     SECOND_AGENT_ID = "second_agent"
 
-    def __init__(self, map_object, map_type, coffee_type, predator_prey, agents_can_be_in_same_cell):
+    def __init__(self, map_object, map_type, coffee_type, predator_prey, allow_stealing, agents_can_be_in_same_cell):
         self.map_type = map_type
         self.coffee_type = coffee_type # "unlimited"/"single"
 
         self.predator_prey = predator_prey
-        if self.predator_prey:
+        self.allow_stealing = allow_stealing
+        if self.predator_prey or self.allow_stealing:
             self.agents_can_be_in_same_cell = True
         else: 
             self.agents_can_be_in_same_cell = agents_can_be_in_same_cell
@@ -54,10 +56,18 @@ class OfficeWorldEnv(ParallelEnv):
 
     def _generate_agent(self, agent_class: type[Agent], agent_id) -> Agent:
         x, y = self.office_world.generate_coordinates()
-        # if agent_id == 2:
-        #     x, y = 6, 5
-        # else:
-        #     x, y = 7, 0
+        # logging.info(f'coords: ({x,y})' )
+        # if self.predator_prey:
+        #     if agent_id == 2:
+        #         x, y = 0, 4
+        #     else:
+        #         x, y = 3, 3
+        
+        # else: 
+        #     if agent_id == 2:
+        #         x, y = 0, 3
+        #     else:
+        #         x, y = 0, 3
 
         return agent_class(x, y)
 
@@ -109,6 +119,11 @@ class OfficeWorldEnv(ParallelEnv):
         if self.predator_prey and (self.primary_agent.coordinates ==  self.second_agent.coordinates):
                 events += 't' # t for trapped
 
+        # if the stealing mode is on, the agent without coffee has a 50% chance of stealing a cup of coffee from the other agent
+        # if self.allow_stealing and (self.primary_agent.coordinates ==  self.second_agent.coordinates):
+        #         if random.random() > 0.5:
+        #             events += 't' # t for trapped
+
         return events
 
     @functools.lru_cache(maxsize=None)
@@ -125,8 +140,13 @@ class OfficeWorldEnv(ParallelEnv):
         self.agents = copy(self.possible_agents)
         self.timestep = 0
 
-        for agent in self.id_to_agent.values():
-            agent.reset()
+        self.id_to_agent = {
+            self.PRIMARY_AGENT_ID: self._generate_agent(PrimaryAgent, 1),
+            self.SECOND_AGENT_ID: self._generate_agent(SecondAgent, 2),
+        }
+
+        # for agent in self.id_to_agent.values():
+        #     agent.reset()
 
         observations = self._get_observations()
         infos = {agent_id: {} for agent_id, _ in self.id_to_agent.items()}
