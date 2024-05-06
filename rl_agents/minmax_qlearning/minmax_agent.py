@@ -25,73 +25,26 @@ class MinMaxQLearningAgent(BaseAgent):
     
 
     def get_value(self, state):
-
-        # best_value = -float('inf')
         worst_value = float('inf')
-
 
         for action in range(self.own_action_space.n):
             for opponent_action in range(self.opponent_action_space.n):
 
                 q_value = self.get_qvalue(state, action, opponent_action)
 
-                # if q_value > best_value:
-                #     best_value = q_value
-
                 if q_value < worst_value:
                     worst_value = q_value
-            # logging.info(f'- GET VALUE: worst val {worst_value}')
 
-        # return best_value
         return worst_value
 
-    
-    # def get_policy(self, state):
-    #     best_action = [] # default action
-    #     best_action_value = -float('inf')
-
-    #     all_q_values = []
-
-    #     for action in range(self.own_action_space.n):
-    #         # max_value_for_action = -float('inf')
-    #         min_value_for_action = float('inf')
-
-    #         for opponent_action in range(self.opponent_action_space.n):
-    #             q_value = self.get_qvalue(state, action, opponent_action)
-    #             all_q_values.append(q_value)
-
-    #             # if q_value > max_value_for_action:
-    #             #     max_value_for_action = q_value
-
-    #             if q_value < min_value_for_action:
-    #                 min_value_for_action = q_value
-
-
-    #         # if max_value_for_action > best_action_value:
-    #         #     best_action_value = max_value_for_action
-    #         #     best_action = action
-
-    #         # logging.info(f'--- GET POLICY: in val per action: {min_value_for_action}, current best action val: {best_action_value}')
-    #         if min_value_for_action > best_action_value:
-    #             best_action_value = min_value_for_action
-    #             best_action = [action]
-    #         # for stochastic policy
-    #         elif math.isclose(min_value_for_action,best_action_value, rel_tol=1e-8):
-    #             best_action.append(action)
-
-    #     # return best_action
-    #     # for stochastic policy
-    #     return random.choice(best_action)
-    
 
     def get_policy(self, state, episode_num, print_on):
         best_action = [] # default action
         best_action_value = -float('inf')
-        # minimal q_values per each our action
+        # minimal q_values per each 'our' action
         min_q_values = []
 
         for action in range(self.own_action_space.n):
-            # max_value_for_action = -float('inf')
             min_value_for_action = float('inf')
 
             for opponent_action in range(self.opponent_action_space.n):
@@ -101,12 +54,11 @@ class MinMaxQLearningAgent(BaseAgent):
                     min_value_for_action = q_value
                 
             min_q_values.append(min_value_for_action)
-            
 
             if min_value_for_action > best_action_value:
                 best_action_value = min_value_for_action
                 best_action = [action]
-            # for stochastic policy
+
             elif math.isclose(min_value_for_action,best_action_value, rel_tol=1e-8):
                 best_action.append(action)
 

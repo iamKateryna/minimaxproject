@@ -8,3 +8,7 @@ class AgentType(Enum):
     MINMAX = "minmax"
     QLEARNING = "qlearning"
     RANDOM = "random"
+
+class ExplorationPolicy(Enum):
+    EPSGREEDY = 'epsilongreedy'
+    BOLTZMANN = 'boltzmann'
