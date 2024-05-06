@@ -106,9 +106,8 @@ class MapCollection:
         (5, 0): OfficeWorldObjects.COFFEE_2, # add second coffee sign
         (4, 4): OfficeWorldObjects.OFFICE,
 
-        # (1, 1): OfficeWorldObjects.PLANT,
+        (1, 1): OfficeWorldObjects.PLANT,
         # (1, 4): OfficeWorldObjects.PLANT,
-        (4, 4): OfficeWorldObjects.PLANT,
         (4, 1): OfficeWorldObjects.PLANT,
         (7, 1): OfficeWorldObjects.PLANT,
         (7, 4): OfficeWorldObjects.PLANT,
