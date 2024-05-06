@@ -66,7 +66,6 @@ def initialize_evaluation(config):
     logging.info(f"job ID -> {job_id}")
     logging.info(f"Experiment setup: {wandb.run.name}")
     logging.info(f"MAP: {config.map_object}, TOTAL TIMESTEPS/EPISODE: {config.total_timesteps}")
-    logging.info(f"Policies paths -> {config.q_tables}")
 
 
 def main(config):
@@ -114,7 +113,7 @@ def main(config):
                     if agent_state not in agent.q_table:
                         agent.init_q_values(agent_state)
 
-                print(f"agent state: {agent_state}")
+                # logging.info(agent_state)
                 action = agent.get_action(agent_state)
                 actions_to_execute[agent_id] = action
 
@@ -139,33 +138,33 @@ def main(config):
             elif (("g1" in true_propositions) and rm_state[agent1] == 4) and ("n2" not in true_propositions):
                 wins_total[agent1] += 1
                 wins_per_print[agent1] +=1
-                logging.info('a win is a win -> g1')
+                # logging.info('a win is a win -> g1')
             elif "f1" in true_propositions or "h1" in true_propositions:
                 picked_coffees[agent1] += 1
                 coffees_per_print[agent1] += 1
-                logging.info('("f1" or "h1") in true_propositions')
+                # logging.info('("f1" or "h1") in true_propositions')
 
             if "n2" in true_propositions and rm_state[agent2] == 4:
                 broken_decorations_score[agent2] +=1
             elif "f2" in true_propositions or "h2" in true_propositions:
                 picked_coffees[agent2] += 1
                 coffees_per_print[agent2] += 1
-                logging.info('("f2" or "h2") in true_propositions')
+                # logging.info('("f2" or "h2") in true_propositions')
             if config.predator_prey:
                 if "t" in true_propositions:
                     wins_total[agent2] += 1
                     wins_per_print[agent2] += 1
-                    logging.info('a win is a win -> t')
+                    # logging.info('a win is a win -> t')
             else:
                 if (("g2" in true_propositions) and rm_state[agent2] == 4) and ("n1" not in true_propositions):
                     wins_total[agent2] += 1
                     wins_per_print[agent2] += 1
-                    logging.info('a win is a win -> g2')
+                    # logging.info('a win is a win -> g2')
 
-            if config.allow_stealing:
-                if "t" in true_propositions:
-                    stolen_coffees += 0 
-                    logging.info("he's stealing cheese!!!")
+            # if config.allow_stealing:
+            #     if "t" in true_propositions:
+            #         stolen_coffees += 0 
+            #         logging.info("he's stealing cheese!!!")
 
 
             if config.print_freq and num_steps % config.print_freq == 0:
