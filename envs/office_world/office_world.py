@@ -107,7 +107,7 @@ class OfficeWorld:
         obstacle_coordinates = self._get_obstacle_coordinates()
         x, y = None, None
 
-        while not x or not y or (x, y) in obstacle_coordinates:
+        while (not x or not y or (x, y) in obstacle_coordinates) or x in [3, 5]:
             x = random.randint(0, self._map_height - 1)
             y = random.randint(0, self._map_width - 1)
 
