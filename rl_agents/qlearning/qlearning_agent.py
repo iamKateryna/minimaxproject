@@ -1,20 +1,22 @@
 import random
 import math
+import numpy as np
+import logging
 
 from ..base.base_agent import BaseAgent
 
 class QLearningAgent(BaseAgent):
-    def __init__(self, action_space, learning_rate=0.5, discount_factor=0.9, exploration_rate=0.5, q_init=2, q_table={}):
-        self.lr = learning_rate
-        self.gamma = discount_factor
+    def __init__(self, action_space, learning_rate=0.5, discount_factor=0.9, exploration_rate=0.0, q_init=2, policy = 'boltzmann', q_table={}):
+        self.q_table = q_table
+        
         self.epsilon = exploration_rate
+        self.lr = learning_rate
+
+        self.gamma = discount_factor
         self.q_init = q_init # initial q-value for unseen states
         self.action_space = action_space
 
-        self.q_table = q_table
-
-        # calculate how ofthen an agent visins different states
-        self.update_counts = {}
+        self.policy = policy
 
     
     def get_qvalue(self, state, action):
@@ -39,24 +41,49 @@ class QLearningAgent(BaseAgent):
             
         return max_
 
-    def get_policy(self, state):
+    def get_policy(self, state, episode_num, print_on):
         q_values = [self.get_qvalue(state, action) for action in range(self.action_space.n)] # array of q_values per action at state state
-        maxQ = max(q_values)
+        if self.policy == 'epsilongreedy':
+            if random.random() < self.epsilon:
+                return random.choice(range(self.action_space.n))
+            else:
+                maxQ = max(q_values)
+                best_actions = [action for action in range(self.action_space.n) if math.isclose(q_values[action],maxQ, rel_tol=1e-8)]
+                return random.choice(best_actions)
+                # return best_actions[0]
+        elif self.policy == 'boltzmann':
+            if self.epsilon == 0.0:
+                return random.choice(best_actions)
+            else:
+                q_values = np.array(q_values)
+                max_q = np.max(q_values)
+                probabilities = np.exp(q_values-max_q / self.epsilon)
 
-        best_actions = [action for action in range(self.action_space.n) if math.isclose(q_values[action],maxQ, rel_tol=1e-8)]
-        
-        # for stochastic policy
-        # return random.choice(best_actions)
+                if episode_num and episode_num > print_on:
+                        logging.info(f' probabilities: {probabilities}')
+                
+                probabilities_sum = probabilities.sum()
+                if probabilities_sum > 0:
+                        probabilities /= probabilities_sum
+                else:
+                    # Handle the case where all exp_values are zero by assigning equal probability to all actions
+                    probabilities = np.ones_like(probabilities) / len(probabilities)
 
-        # for deterministic policy
-        return best_actions[0]
+                if episode_num and episode_num > print_on:
+                        logging.info(f'normalized probabilities: {probabilities}')
+
+                return np.random.choice(self.action_space.n, p=probabilities)
+        else:
+            raise NotImplementedError
 
     # returns action for state state
-    def get_action(self, state):
-        if random.random() < self.epsilon:
-            return random.choice(range(self.action_space.n))
-        else:
-            return self.get_policy(state)
+    def get_action(self, state, episode_num=None, print_on=16_000):
+        action = self.get_policy(state, episode_num, print_on)
+
+        if episode_num and episode_num > print_on:
+            logging.info(f"action: {action}")
+
+        return action
         
     
     def init_q_values(self, state):
@@ -64,12 +91,9 @@ class QLearningAgent(BaseAgent):
         # self.update_counts[state] = {action: 0 for action in range(self.action_space.n)}
 
     # experience = [(state, action, reward, next_state, done) (state, action, reward, next_state, done), ...]
-    def learn(self, experience):
+    def learn(self, experience, episode_num=None, print_on=16_000):
         i = 0
         for state, (action, ), reward, next_state, done in experience:
-
-            # print(f"\n crm round {i}")
-            # print(f"Inside learn(): State -> {state}, actions -> {action}, Next state -> {next_state}")
 
             if state not in self.q_table:
                 self.init_q_values(state)
@@ -85,16 +109,17 @@ class QLearningAgent(BaseAgent):
             if done:
                 value = reward
             else: 
-                # print(f"Value -> {value}")
                 value = reward + self.gamma * self.get_value(next_state)
                 
             q_value = self.get_qvalue(state, action) # q_value of our action action at state state
 
-            # print(f"self.q_table[state][action]: {self.q_table[state][action]}\nValue {value}\nQ_value: {q_value} ")
             self.q_table[state][action] += self.lr * (value - q_value)
-            # print(f"self.q_table[state] -> {self.q_table[state]}")
+
+            if episode_num and episode_num > print_on:
+                logging.info(f"--- {i} --- state: {state}")
+                logging.info(f"val: {self.q_table[state][action]}")
+
             i+=1
-            # self.update_counts[state][action] +=1
 
     def name(self):
         return 'qlearning'
